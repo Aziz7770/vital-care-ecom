@@ -40,31 +40,50 @@ const statusConfig: Record<OrderStatus, { label: string; color: string; icon: Re
 
 const ORDERS_PER_PAGE = 10;
 
-const ADMIN_PASSWORD = "bismillah2025";
-
 const AdminOrders = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
+  const navigate = useNavigate();
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const handleLogin = () => {
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_auth", "true");
-    } else {
-      toast.error("পাসওয়ার্ড ভুল হয়েছে!");
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth", { replace: true });
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem("admin_auth") === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
+    const check = async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", sess.session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roles) {
+        toast.error("আপনার অ্যাডমিন অ্যাক্সেস নেই");
+        await supabase.auth.signOut();
+        navigate("/auth", { replace: true });
+        return;
+      }
+      setIsAdmin(true);
+      setAuthChecking(false);
+    };
+    check();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) navigate("/auth", { replace: true });
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [navigate]);
 
   const fetchOrders = async () => {
     setLoading(true);
