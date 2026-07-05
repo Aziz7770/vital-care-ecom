@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw } from "lucide-react";
+import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
