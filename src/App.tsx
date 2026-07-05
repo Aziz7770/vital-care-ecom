@@ -20,6 +20,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ReturnPolicy from "./pages/ReturnPolicy";
 import AdminOrders from "./pages/AdminOrders";
+import Auth from "./pages/Auth";
 import SlugRouter from "./components/SlugRouter";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
             <Route path="/terms" element={<MainLayout><Terms /></MainLayout>} />
             <Route path="/return-policy" element={<MainLayout><ReturnPolicy /></MainLayout>} />
+            <Route path="/auth" element={<MainLayout><Auth /></MainLayout>} />
             <Route path="/admin/orders" element={<MainLayout><AdminOrders /></MainLayout>} />
 
             {/* Short URL: /:slug → product landing (standalone) or 404 */}
