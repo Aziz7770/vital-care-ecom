@@ -102,8 +102,8 @@ const AdminOrders = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchOrders();
-  }, []);
+    if (isAdmin) fetchOrders();
+  }, [isAdmin]);
 
   const updateStatus = async (orderId: string, status: OrderStatus) => {
     const { error } = await supabase
