@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw } from "lucide-react";
+import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -39,31 +40,50 @@ const statusConfig: Record<OrderStatus, { label: string; color: string; icon: Re
 
 const ORDERS_PER_PAGE = 10;
 
-const ADMIN_PASSWORD = "bismillah2025";
-
 const AdminOrders = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
+  const navigate = useNavigate();
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const handleLogin = () => {
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_auth", "true");
-    } else {
-      toast.error("পাসওয়ার্ড ভুল হয়েছে!");
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth", { replace: true });
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem("admin_auth") === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
+    const check = async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", sess.session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roles) {
+        toast.error("আপনার অ্যাডমিন অ্যাক্সেস নেই");
+        await supabase.auth.signOut();
+        navigate("/auth", { replace: true });
+        return;
+      }
+      setIsAdmin(true);
+      setAuthChecking(false);
+    };
+    check();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) navigate("/auth", { replace: true });
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [navigate]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -82,8 +102,8 @@ const AdminOrders = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchOrders();
-  }, []);
+    if (isAdmin) fetchOrders();
+  }, [isAdmin]);
 
   const updateStatus = async (orderId: string, status: OrderStatus) => {
     const { error } = await supabase
@@ -145,20 +165,11 @@ const AdminOrders = () => {
     });
   };
 
-  if (!isAuthenticated) {
+  if (authChecking || !isAdmin) {
     return (
-      <div className="container py-20 flex flex-col items-center gap-4">
-        <Lock className="h-12 w-12 text-muted-foreground" />
-        <h2 className="text-xl font-bold text-foreground">অ্যাডমিন লগইন</h2>
-        <input
-          type="password"
-          placeholder="পাসওয়ার্ড দিন"
-          value={passwordInput}
-          onChange={(e) => setPasswordInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-          className="border border-border rounded-lg px-4 py-2 w-64 text-center bg-card text-foreground"
-        />
-        <Button onClick={handleLogin}>প্রবেশ করুন</Button>
+      <div className="container py-20 text-center">
+        <RefreshCw className="mx-auto h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-sm text-muted-foreground">যাচাই করা হচ্ছে...</p>
       </div>
     );
   }
@@ -193,7 +204,10 @@ const AdminOrders = () => {
           <Button size="sm" variant="outline" onClick={fetchOrders} className="text-xs">
             <RefreshCw className="h-3 w-3 mr-1" /> রিফ্রেশ
           </Button>
-          <span className="text-sm text-muted-foreground">মোট: {orders.length}টি</span>
+          <Button size="sm" variant="outline" onClick={handleLogout} className="text-xs">
+            <LogOut className="h-3 w-3 mr-1" /> লগআউট
+          </Button>
+          <span className="text-sm text-muted-foreground hidden sm:inline">মোট: {orders.length}টি</span>
         </div>
       </div>
 
