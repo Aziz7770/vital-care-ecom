@@ -204,7 +204,10 @@ const AdminOrders = () => {
           <Button size="sm" variant="outline" onClick={fetchOrders} className="text-xs">
             <RefreshCw className="h-3 w-3 mr-1" /> রিফ্রেশ
           </Button>
-          <span className="text-sm text-muted-foreground">মোট: {orders.length}টি</span>
+          <Button size="sm" variant="outline" onClick={handleLogout} className="text-xs">
+            <LogOut className="h-3 w-3 mr-1" /> লগআউট
+          </Button>
+          <span className="text-sm text-muted-foreground hidden sm:inline">মোট: {orders.length}টি</span>
         </div>
       </div>
 
