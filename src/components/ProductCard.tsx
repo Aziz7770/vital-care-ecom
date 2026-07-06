@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Star, CreditCard, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackAddToCart } from "@/lib/tracking";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/data/products";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       return;
     }
     addToCart(product);
+    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category });
     toast.success("অর্ডার প্রস্তুত! আপনার তথ্য দিন।");
     navigate("/checkout");
   };
