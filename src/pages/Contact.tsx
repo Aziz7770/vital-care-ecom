@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,11 +6,43 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SEO, { SITE_URL } from "@/components/SEO";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { trackSubmitForm } from "@/lib/tracking";
 
 const Contact = () => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast.success("আপনার মেসেজ পাঠানো হয়েছে!");
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const fields = {
+      name: String(fd.get("name") || "").trim(),
+      email: String(fd.get("email") || "").trim(),
+      phone: String(fd.get("phone") || "").trim(),
+      message: String(fd.get("message") || "").trim(),
+    };
+
+    if (!fields.name || !fields.phone || !fields.message) {
+      toast.error("সব প্রয়োজনীয় তথ্য পূরণ করুন");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-form", {
+        body: { type: "contact", fields },
+      });
+      if (error || !data?.success) throw error || new Error("Failed");
+      trackSubmitForm("Contact");
+      toast.success("আপনার মেসেজ পাঠানো হয়েছে!");
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      toast.error("দুঃখিত, পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,11 +75,13 @@ const Contact = () => {
 
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="text-lg font-semibold text-foreground">মেসেজ পাঠান</h3>
-          <div><Label htmlFor="name">নাম *</Label><Input id="name" required /></div>
-          <div><Label htmlFor="email">ইমেইল</Label><Input id="email" type="email" /></div>
-          <div><Label htmlFor="phone">ফোন *</Label><Input id="phone" required type="tel" /></div>
-          <div><Label htmlFor="message">মেসেজ *</Label><Textarea id="message" required rows={4} /></div>
-          <Button type="submit" className="w-full">পাঠান</Button>
+          <div><Label htmlFor="name">নাম *</Label><Input id="name" name="name" required /></div>
+          <div><Label htmlFor="email">ইমেইল</Label><Input id="email" name="email" type="email" /></div>
+          <div><Label htmlFor="phone">ফোন *</Label><Input id="phone" name="phone" required type="tel" /></div>
+          <div><Label htmlFor="message">মেসেজ *</Label><Textarea id="message" name="message" required rows={4} /></div>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "পাঠানো হচ্ছে..." : "পাঠান"}
+          </Button>
         </form>
       </div>
     </div>

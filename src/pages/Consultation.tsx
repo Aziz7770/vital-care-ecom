@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Phone, MessageCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,15 +7,48 @@ import { Textarea } from "@/components/ui/textarea";
 import SEO, { SITE_URL } from "@/components/SEO";
 import doctorImg from "@/assets/doctor-consultation.jpg";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { trackSubmitForm } from "@/lib/tracking";
 
 const Consultation = () => {
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast.success("আপনার পরামর্শের অনুরোধ পাঠানো হয়েছে! শীঘ্রই ডাক্তার যোগাযোগ করবেন।");
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const fields = {
+      name: String(fd.get("name") || "").trim(),
+      phone: String(fd.get("phone") || "").trim(),
+      age: String(fd.get("age") || "").trim(),
+      problem: String(fd.get("problem") || "").trim(),
+      duration: String(fd.get("duration") || "").trim(),
+    };
+
+    if (!fields.name || !fields.phone || !fields.age || !fields.problem) {
+      toast.error("সব প্রয়োজনীয় তথ্য পূরণ করুন");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-form", {
+        body: { type: "consultation", fields },
+      });
+      if (error || !data?.success) throw error || new Error("Failed");
+      trackSubmitForm("Consultation");
+      toast.success("আপনার পরামর্শের অনুরোধ পাঠানো হয়েছে! শীঘ্রই ডাক্তার যোগাযোগ করবেন।");
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      toast.error("দুঃখিত, পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,12 +89,14 @@ const Consultation = () => {
         <div>
           <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">পরামর্শের জন্য আবেদন</h3>
-            <div><Label htmlFor="name">আপনার নাম *</Label><Input id="name" required placeholder="পূর্ণ নাম" /></div>
-            <div><Label htmlFor="phone">মোবাইল নম্বর *</Label><Input id="phone" required placeholder="০১XXXXXXXXX" type="tel" /></div>
-            <div><Label htmlFor="age">বয়স *</Label><Input id="age" required placeholder="যেমন: ২৫" type="number" min="1" max="120" /></div>
-            <div><Label htmlFor="problem">আপনার সমস্যা *</Label><Textarea id="problem" required placeholder="আপনার সমস্যা বিস্তারিত লিখুন..." rows={5} /></div>
-            <div><Label htmlFor="duration">কতদিন ধরে সমস্যা?</Label><Input id="duration" placeholder="যেমন: ৬ মাস" /></div>
-            <Button type="submit" size="lg" className="w-full">পরামর্শের অনুরোধ পাঠান</Button>
+            <div><Label htmlFor="name">আপনার নাম *</Label><Input id="name" name="name" required placeholder="পূর্ণ নাম" /></div>
+            <div><Label htmlFor="phone">মোবাইল নম্বর *</Label><Input id="phone" name="phone" required placeholder="০১XXXXXXXXX" type="tel" /></div>
+            <div><Label htmlFor="age">বয়স *</Label><Input id="age" name="age" required placeholder="যেমন: ২৫" type="number" min="1" max="120" /></div>
+            <div><Label htmlFor="problem">আপনার সমস্যা *</Label><Textarea id="problem" name="problem" required placeholder="আপনার সমস্যা বিস্তারিত লিখুন..." rows={5} /></div>
+            <div><Label htmlFor="duration">কতদিন ধরে সমস্যা?</Label><Input id="duration" name="duration" placeholder="যেমন: ৬ মাস" /></div>
+            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              {loading ? "পাঠানো হচ্ছে..." : "পরামর্শের অনুরোধ পাঠান"}
+            </Button>
           </form>
         </div>
       </div>
