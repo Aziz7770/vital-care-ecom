@@ -83,9 +83,13 @@ const Checkout = () => {
       return;
     }
 
+    // Shared event id for Pixel + CAPI deduplication
+    const purchaseEventId = orderId;
+    const capiCtx = { ...getCapiContext(), event_id: purchaseEventId };
+
     // Send notifications via edge function
     try {
-      const { data: notifyData } = await supabase.functions.invoke('notify-order', {
+      await supabase.functions.invoke('notify-order', {
         body: {
           orderId,
           customerName: name,
@@ -100,9 +104,9 @@ const Checkout = () => {
           subtotal: currentTotal,
           deliveryCharge: currentDelivery,
           total: currentTotal + currentDelivery,
+          capi: capiCtx,
         },
       });
-      // WhatsApp redirect removed — customer can use the floating WhatsApp button instead
     } catch (notifyErr) {
       console.error("Notification error:", notifyErr);
     }
@@ -110,7 +114,8 @@ const Checkout = () => {
     trackCompletePayment(
       orderId,
       currentItems.map((i) => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
-      currentTotal + currentDelivery
+      currentTotal + currentDelivery,
+      purchaseEventId,
     );
 
     markProductsAsOrdered(currentItems.map((i) => i.product.id));
