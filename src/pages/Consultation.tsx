@@ -9,6 +9,7 @@ import doctorImg from "@/assets/doctor-consultation.jpg";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { trackSubmitForm } from "@/lib/tracking";
+import { getCapiContext } from "@/lib/capi";
 
 const Consultation = () => {
   const [loading, setLoading] = useState(false);
@@ -36,11 +37,12 @@ const Consultation = () => {
 
     setLoading(true);
     try {
+      const capi = getCapiContext();
       const { data, error } = await supabase.functions.invoke("notify-form", {
-        body: { type: "consultation", fields },
+        body: { type: "consultation", fields, capi },
       });
       if (error || !data?.success) throw error || new Error("Failed");
-      trackSubmitForm("Consultation");
+      trackSubmitForm("Consultation", capi.event_id);
       toast.success("আপনার পরামর্শের অনুরোধ পাঠানো হয়েছে! শীঘ্রই ডাক্তার যোগাযোগ করবেন।");
       form.reset();
     } catch (err) {
