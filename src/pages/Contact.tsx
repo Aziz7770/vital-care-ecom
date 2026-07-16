@@ -8,6 +8,7 @@ import SEO, { SITE_URL } from "@/components/SEO";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { trackSubmitForm } from "@/lib/tracking";
+import { getCapiContext } from "@/lib/capi";
 
 const Contact = () => {
   const [loading, setLoading] = useState(false);
@@ -30,11 +31,12 @@ const Contact = () => {
 
     setLoading(true);
     try {
+      const capi = getCapiContext();
       const { data, error } = await supabase.functions.invoke("notify-form", {
-        body: { type: "contact", fields },
+        body: { type: "contact", fields, capi },
       });
       if (error || !data?.success) throw error || new Error("Failed");
-      trackSubmitForm("Contact");
+      trackSubmitForm("Contact", capi.event_id);
       toast.success("আপনার মেসেজ পাঠানো হয়েছে!");
       form.reset();
     } catch (err) {
