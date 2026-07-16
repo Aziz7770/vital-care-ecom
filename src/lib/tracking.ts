@@ -1,4 +1,4 @@
-// Pixel tracking utility for TikTok (and Facebook when added)
+// Pixel tracking utility for TikTok + Facebook
 
 declare global {
   interface Window {
@@ -10,8 +10,10 @@ declare global {
   }
 }
 
-// TikTok Pixel Events
-export const trackViewContent = (product: { id: string; name: string; price: number; category?: string }) => {
+export const trackViewContent = (
+  product: { id: string; name: string; price: number; category?: string },
+  eventId?: string,
+) => {
   window.ttq?.track("ViewContent", {
     content_id: product.id,
     content_name: product.name,
@@ -20,17 +22,26 @@ export const trackViewContent = (product: { id: string; name: string; price: num
     value: product.price,
     currency: "BDT",
   });
-  window.fbq?.("track", "ViewContent", {
-    content_ids: [product.id],
-    content_name: product.name,
-    content_type: "product",
-    content_category: product.category || "",
-    value: product.price,
-    currency: "BDT",
-  });
+  window.fbq?.(
+    "track",
+    "ViewContent",
+    {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      content_category: product.category || "",
+      value: product.price,
+      currency: "BDT",
+    },
+    eventId ? { eventID: eventId } : undefined,
+  );
 };
 
-export const trackAddToCart = (product: { id: string; name: string; price: number; category?: string }, quantity = 1) => {
+export const trackAddToCart = (
+  product: { id: string; name: string; price: number; category?: string },
+  quantity = 1,
+  eventId?: string,
+) => {
   window.ttq?.track("AddToCart", {
     content_id: product.id,
     content_name: product.name,
@@ -39,13 +50,18 @@ export const trackAddToCart = (product: { id: string; name: string; price: numbe
     value: product.price * quantity,
     currency: "BDT",
   });
-  window.fbq?.("track", "AddToCart", {
-    content_ids: [product.id],
-    content_name: product.name,
-    content_type: "product",
-    value: product.price * quantity,
-    currency: "BDT",
-  });
+  window.fbq?.(
+    "track",
+    "AddToCart",
+    {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      value: product.price * quantity,
+      currency: "BDT",
+    },
+    eventId ? { eventID: eventId } : undefined,
+  );
 };
 
 export const trackInitiateCheckout = (

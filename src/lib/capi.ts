@@ -1,4 +1,5 @@
 // Helpers for Meta Conversions API deduplication with the browser Pixel.
+import { supabase } from "@/integrations/supabase/client";
 
 export const getCookie = (name: string): string | undefined => {
   if (typeof document === "undefined") return undefined;
@@ -18,3 +19,29 @@ export const getCapiContext = () => ({
   fbp: getCookie("_fbp"),
   fbc: getCookie("_fbc"),
 });
+
+// Fire-and-forget server-side event via the meta-capi-event edge function.
+export const sendServerEvent = (payload: {
+  eventName: "ViewContent" | "AddToCart" | "InitiateCheckout";
+  eventId: string;
+  value?: number;
+  currency?: string;
+  contents?: { id: string; quantity: number; item_price: number }[];
+  contentIds?: string[];
+  contentName?: string;
+  contentCategory?: string;
+}) => {
+  const ctx = getCapiContext();
+  const body = {
+    ...payload,
+    eventSourceUrl: ctx.event_source_url,
+    userAgent: ctx.user_agent,
+    fbp: ctx.fbp,
+    fbc: ctx.fbc,
+  };
+  try {
+    supabase.functions.invoke("meta-capi-event", { body }).catch(() => {});
+  } catch {
+    /* swallow */
+  }
+};
