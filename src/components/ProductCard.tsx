@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Star, CreditCard, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackAddToCart } from "@/lib/tracking";
+import { sendServerEvent, genEventId } from "@/lib/capi";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/data/products";
 import { toast } from "sonner";
@@ -17,7 +18,17 @@ const ProductCard = ({ product }: { product: Product }) => {
       return;
     }
     addToCart(product);
-    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category });
+    const eid = genEventId();
+    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category }, 1, eid);
+    sendServerEvent({
+      eventName: "AddToCart",
+      eventId: eid,
+      value: product.price,
+      currency: "BDT",
+      contents: [{ id: product.id, quantity: 1, item_price: product.price }],
+      contentName: product.name,
+      contentCategory: product.category,
+    });
     toast.success("অর্ডার প্রস্তুত! আপনার তথ্য দিন।");
     navigate("/checkout");
   };
