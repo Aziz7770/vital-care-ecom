@@ -48,33 +48,52 @@ export const trackAddToCart = (product: { id: string; name: string; price: numbe
   });
 };
 
-export const trackInitiateCheckout = (items: { id: string; name: string; price: number; quantity: number }[], total: number) => {
+export const trackInitiateCheckout = (
+  items: { id: string; name: string; price: number; quantity: number }[],
+  total: number,
+  eventId?: string,
+) => {
   window.ttq?.track("InitiateCheckout", {
     contents: items.map((i) => ({ content_id: i.id, content_name: i.name, quantity: i.quantity, price: i.price })),
     value: total,
     currency: "BDT",
   });
-  window.fbq?.("track", "InitiateCheckout", {
-    content_ids: items.map((i) => i.id),
-    value: total,
-    currency: "BDT",
-    num_items: items.length,
-  });
+  window.fbq?.(
+    "track",
+    "InitiateCheckout",
+    {
+      content_ids: items.map((i) => i.id),
+      value: total,
+      currency: "BDT",
+      num_items: items.length,
+    },
+    eventId ? { eventID: eventId } : undefined,
+  );
 };
 
-export const trackCompletePayment = (orderId: string, items: { id: string; name: string; price: number; quantity: number }[], total: number) => {
+export const trackCompletePayment = (
+  orderId: string,
+  items: { id: string; name: string; price: number; quantity: number }[],
+  total: number,
+  eventId?: string,
+) => {
   window.ttq?.track("CompletePayment", {
     contents: items.map((i) => ({ content_id: i.id, content_name: i.name, quantity: i.quantity, price: i.price })),
     value: total,
     currency: "BDT",
     order_id: orderId,
   });
-  window.fbq?.("track", "Purchase", {
-    content_ids: items.map((i) => i.id),
-    value: total,
-    currency: "BDT",
-    num_items: items.length,
-  });
+  window.fbq?.(
+    "track",
+    "Purchase",
+    {
+      content_ids: items.map((i) => i.id),
+      value: total,
+      currency: "BDT",
+      num_items: items.length,
+    },
+    eventId ? { eventID: eventId } : undefined,
+  );
 };
 
 export const trackContact = () => {
@@ -82,7 +101,12 @@ export const trackContact = () => {
   window.fbq?.("track", "Contact");
 };
 
-export const trackSubmitForm = (formName: string) => {
+export const trackSubmitForm = (formName: string, eventId?: string) => {
   window.ttq?.track("SubmitForm", { description: formName });
-  window.fbq?.("track", "Lead", { content_name: formName });
+  window.fbq?.(
+    "track",
+    "Lead",
+    { content_name: formName },
+    eventId ? { eventID: eventId } : undefined,
+  );
 };
