@@ -12,6 +12,7 @@ import { products, testimonials } from "@/data/products";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { trackViewContent, trackAddToCart } from "@/lib/tracking";
+import { sendServerEvent, genEventId } from "@/lib/capi";
 
 const ProductLanding = () => {
   const { slug } = useParams();
@@ -25,7 +26,17 @@ const ProductLanding = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (product) {
-      trackViewContent({ id: product.id, name: product.name, price: product.price, category: product.category });
+      const eid = genEventId();
+      trackViewContent({ id: product.id, name: product.name, price: product.price, category: product.category }, eid);
+      sendServerEvent({
+        eventName: "ViewContent",
+        eventId: eid,
+        value: product.price,
+        currency: "BDT",
+        contentIds: [product.id],
+        contentName: product.name,
+        contentCategory: product.category,
+      });
     }
   }, [slug, product]);
 
@@ -47,7 +58,17 @@ const ProductLanding = () => {
   const handleOrder = () => {
     if (productOrdered) { toast.info("এই পণ্যটি ইতিমধ্যে অর্ডার করা হয়েছে।"); return; }
     addToCart(product);
-    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category });
+    const eid = genEventId();
+    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category }, 1, eid);
+    sendServerEvent({
+      eventName: "AddToCart",
+      eventId: eid,
+      value: product.price,
+      currency: "BDT",
+      contents: [{ id: product.id, quantity: 1, item_price: product.price }],
+      contentName: product.name,
+      contentCategory: product.category,
+    });
     toast.success("অর্ডার প্রস্তুত! আপনার তথ্য দিন।");
     navigate("/checkout");
   };
