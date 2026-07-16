@@ -7,6 +7,8 @@ import { products, productReviews } from "@/data/products";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { trackViewContent, trackAddToCart } from "@/lib/tracking";
+import { sendServerEvent, genEventId } from "@/lib/capi";
+import { Truck, ShieldCheck, PackageCheck } from "lucide-react";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -18,7 +20,17 @@ const ProductDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (product) {
-      trackViewContent({ id: product.id, name: product.name, price: product.price, category: product.category });
+      const eid = genEventId();
+      trackViewContent({ id: product.id, name: product.name, price: product.price, category: product.category }, eid);
+      sendServerEvent({
+        eventName: "ViewContent",
+        eventId: eid,
+        value: product.price,
+        currency: "BDT",
+        contentIds: [product.id],
+        contentName: product.name,
+        contentCategory: product.category,
+      });
     }
   }, [slug, product]);
 
@@ -34,7 +46,17 @@ const ProductDetail = () => {
   const handleAdd = () => {
     if (productOrdered) { toast.info("এই পণ্যটি ইতিমধ্যে অর্ডার করা হয়েছে।"); return; }
     addToCart(product);
-    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category });
+    const eid = genEventId();
+    trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category }, 1, eid);
+    sendServerEvent({
+      eventName: "AddToCart",
+      eventId: eid,
+      value: product.price,
+      currency: "BDT",
+      contents: [{ id: product.id, quantity: 1, item_price: product.price }],
+      contentName: product.name,
+      contentCategory: product.category,
+    });
     toast.success(`${product.name} কার্টে যোগ হয়েছে!`);
   };
 
@@ -122,11 +144,21 @@ const ProductDetail = () => {
             )}
           </div>
 
-          <div className="mt-6 flex gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> বিশ্বস্ত প্রতিষ্ঠান</span>
-            <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> দ্রুত ডেলিভারি</span>
-            <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> Cash on Delivery</span>
+          <div className="mt-6 grid grid-cols-3 gap-2 text-[11px] text-foreground">
+            <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-secondary/30 p-2 text-center">
+              <Truck className="h-4 w-4 text-primary" />
+              <span>২-৩ দিনে ডেলিভারি</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-secondary/30 p-2 text-center">
+              <PackageCheck className="h-4 w-4 text-primary" />
+              <span>ক্যাশ অন ডেলিভারি</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-secondary/30 p-2 text-center">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <span>১০০% আসল</span>
+            </div>
           </div>
+          <p className="mt-3 text-xs font-medium text-offer">🔥 আজ {Math.max(5, (product.reviews % 20) + 8)} জন অর্ডার করেছেন — স্টক সীমিত</p>
         </div>
       </div>
 
