@@ -12,6 +12,7 @@ import { products, testimonials } from "@/data/products";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { trackViewContent, trackAddToCart } from "@/lib/tracking";
+import { sendServerEvent, genEventId } from "@/lib/capi";
 
 const ProductLanding = () => {
   const { slug } = useParams();
