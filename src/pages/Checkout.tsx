@@ -10,9 +10,20 @@ import { CheckCircle } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
-import { getCapiContext, genEventId } from "@/lib/capi";
+import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 
 const OWNER_WHATSAPP = "8801767678562";
+
+const BD_DISTRICTS = [
+  "ঢাকা","চট্টগ্রাম","গাজীপুর","নারায়ণগঞ্জ","কুমিল্লা","সিলেট","রাজশাহী","খুলনা","বরিশাল","রংপুর","ময়মনসিংহ",
+  "গোপালগঞ্জ","ফরিদপুর","মাদারীপুর","শরীয়তপুর","কিশোরগঞ্জ","টাঙ্গাইল","মানিকগঞ্জ","মুন্সিগঞ্জ","নরসিংদী","নারসিংদী",
+  "যশোর","সাতক্ষীরা","বাগেরহাট","কুষ্টিয়া","মাগুরা","নড়াইল","ঝিনাইদহ","চুয়াডাঙ্গা","মেহেরপুর",
+  "বগুড়া","পাবনা","সিরাজগঞ্জ","জয়পুরহাট","নওগাঁ","নাটোর","চাঁপাইনবাবগঞ্জ",
+  "দিনাজপুর","পঞ্চগড়","ঠাকুরগাঁও","নীলফামারী","লালমনিরহাট","কুড়িগ্রাম","গাইবান্ধা",
+  "মৌলভীবাজার","হবিগঞ্জ","সুনামগঞ্জ","ব্রাহ্মণবাড়িয়া","চাঁদপুর","লক্ষ্মীপুর","নোয়াখালী","ফেনী","কক্সবাজার","বান্দরবান","রাঙামাটি","খাগড়াছড়ি",
+  "পটুয়াখালী","ভোলা","পিরোজপুর","বরগুনা","ঝালকাঠি",
+  "জামালপুর","শেরপুর","নেত্রকোনা","অন্যান্য",
+];
 
 const Checkout = () => {
   const { items, totalPrice, clearCart, markProductsAsOrdered } = useCart();
@@ -30,6 +41,13 @@ const Checkout = () => {
         totalPrice,
         eid,
       );
+      sendServerEvent({
+        eventName: "InitiateCheckout",
+        eventId: eid,
+        value: totalPrice,
+        currency: "BDT",
+        contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.product.price })),
+      });
     }
   }, []);
 
@@ -49,8 +67,11 @@ const Checkout = () => {
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const phone = formData.get("phone") as string;
+    const email = ((formData.get("email") as string) || "").trim();
+    const district = ((formData.get("district") as string) || "").trim();
     const address = formData.get("address") as string;
     const note = formData.get("note") as string;
+    const fullAddress = district ? `${address} (জেলা: ${district})` : address;
 
     // Build WhatsApp message with order details
     const currentItems = orderItemsRef.current;
@@ -64,7 +85,7 @@ const Checkout = () => {
       order_id: orderId,
       customer_name: name,
       phone,
-      address,
+      address: fullAddress,
       note: note || "",
       items: currentItems.map((item) => ({
         name: item.product.name,
@@ -94,7 +115,9 @@ const Checkout = () => {
           orderId,
           customerName: name,
           phone,
-          address,
+          email: email || undefined,
+          district: district || undefined,
+          address: fullAddress,
           note: note || "",
           items: currentItems.map((item) => ({
             name: item.product.name,
