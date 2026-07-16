@@ -10,6 +10,7 @@ import { CheckCircle } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
+import { getCapiContext, genEventId } from "@/lib/capi";
 
 const OWNER_WHATSAPP = "8801767678562";
 
