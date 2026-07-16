@@ -182,7 +182,26 @@ const Checkout = () => {
               <div><Label htmlFor="name">আপনার নাম *</Label><Input id="name" name="name" required placeholder="পূর্ণ নাম" /></div>
               <div><Label htmlFor="phone">মোবাইল নম্বর *</Label><Input id="phone" name="phone" required placeholder="০১XXXXXXXXX" type="tel" /></div>
             </div>
-            <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" name="address" required placeholder="বাসা/ফ্ল্যাট নং, রোড, এলাকা, থানা, জেলা" /></div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label>
+                <Input id="email" name="email" type="email" placeholder="example@gmail.com" />
+              </div>
+              <div>
+                <Label htmlFor="district">জেলা *</Label>
+                <select
+                  id="district"
+                  name="district"
+                  required
+                  defaultValue=""
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="" disabled>জেলা নির্বাচন করুন</option>
+                  {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+            <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" name="address" required placeholder="বাসা/ফ্ল্যাট নং, রোড, এলাকা, থানা" /></div>
             <div><Label htmlFor="note">বিশেষ নোট (ঐচ্ছিক)</Label><Input id="note" name="note" placeholder="যেকোনো বিশেষ নির্দেশনা" /></div>
           </div>
 

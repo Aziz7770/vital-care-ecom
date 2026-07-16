@@ -30,6 +30,9 @@ async function sendMetaCapi(params: {
   fbc?: string;
   phone?: string;
   name?: string;
+  email?: string;
+  city?: string;
+  country?: string;
   value?: number;
   currency?: string;
   contents?: { id: string; quantity: number; item_price: number }[];
@@ -44,11 +47,14 @@ async function sendMetaCapi(params: {
 
   const user_data: Record<string, unknown> = {};
   if (params.phone) user_data.ph = [await sha256(normalizePhone(params.phone))];
+  if (params.email) user_data.em = [await sha256(params.email)];
   if (params.name) {
     const parts = params.name.trim().split(/\s+/);
     user_data.fn = [await sha256(parts[0] || "")];
     if (parts.length > 1) user_data.ln = [await sha256(parts.slice(1).join(" "))];
   }
+  if (params.city) user_data.ct = [await sha256(params.city.replace(/\s+/g, ""))];
+  if (params.country) user_data.country = [await sha256(params.country)];
   if (params.clientIp) user_data.client_ip_address = params.clientIp;
   if (params.userAgent) user_data.client_user_agent = params.userAgent;
   if (params.fbp) user_data.fbp = params.fbp;
@@ -98,7 +104,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const {
-      orderId, customerName, phone, address, note, items, subtotal, deliveryCharge, total,
+      orderId, customerName, phone, email, district, address, note, items, subtotal, deliveryCharge, total,
       capi,
     } = body;
 
@@ -106,6 +112,8 @@ Deno.serve(async (req) => {
     message += `🆔 *অর্ডার:* ${orderId}\n`;
     message += `👤 *নাম:* ${customerName}\n`;
     message += `📞 *ফোন:* ${phone}\n`;
+    if (email) message += `✉️ *ইমেইল:* ${email}\n`;
+    if (district) message += `🏙️ *জেলা:* ${district}\n`;
     message += `📍 *ঠিকানা:* ${address}\n`;
     if (note) message += `📝 *নোট:* ${note}\n`;
     message += `\n📦 *পণ্যসমূহ:*\n`;
@@ -148,6 +156,9 @@ Deno.serve(async (req) => {
       fbc: capi?.fbc,
       phone,
       name: customerName,
+      email,
+      city: district,
+      country: "bd",
       value: total,
       currency: "BDT",
       orderId,
