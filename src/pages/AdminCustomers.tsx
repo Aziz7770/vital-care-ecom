@@ -255,7 +255,6 @@ const AdminCustomers = () => {
   const extractText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".docx")) {
-      const mammoth = await import("mammoth/mammoth.browser");
       const buf = await file.arrayBuffer();
       const res = await mammoth.extractRawText({ arrayBuffer: buf });
       return res.value;
@@ -267,7 +266,6 @@ const AdminCustomers = () => {
     const out: File[] = [];
     for (const f of files) {
       if (f.name.toLowerCase().endsWith(".zip")) {
-        const JSZip = (await import("jszip")).default;
         const zip = await JSZip.loadAsync(f);
         for (const entry of Object.values(zip.files)) {
           if (entry.dir) continue;
