@@ -421,6 +421,31 @@ const AdminCustomers = () => {
         </Button>
       </div>
 
+      {/* Notebook bulk import */}
+      <div className="rounded-lg border-2 border-primary/30 bg-card p-4 mb-6">
+        <h2 className="font-semibold mb-1 flex items-center gap-2">
+          <Upload className="h-4 w-4" /> নোটবুক ফাইল ইমপোর্ট (Word / TXT / ZIP)
+        </h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          একসাথে শত শত <code>.docx</code> বা <code>.txt</code> ফাইল নির্বাচন করুন (অথবা সব ফাইল একটি
+          <code> .zip</code>-এ দিন)। এলোমেলো লেখা থেকেই নাম, ফোন, ঠিকানা ও টাকার পরিমাণ স্বয়ংক্রিয়ভাবে
+          আলাদা হবে এবং ডুপ্লিকেট ফোন নম্বর বাদ যাবে।
+        </p>
+        <input
+          ref={bulkRef}
+          type="file"
+          multiple
+          accept=".docx,.txt,.zip"
+          className="hidden"
+          onChange={(e) => e.target.files?.length && handleNotebookFiles(e.target.files)}
+        />
+        <Button onClick={() => bulkRef.current?.click()} disabled={bulkImporting}>
+          {bulkImporting ? "ইমপোর্ট হচ্ছে…" : "ফাইলগুলো নির্বাচন করুন"}
+        </Button>
+        {bulkProgress && <p className="text-xs text-muted-foreground mt-2">{bulkProgress}</p>}
+      </div>
+
+
       {/* Manual entry */}
       <form onSubmit={addOrder} className="rounded-lg border bg-card p-4 mb-6">
         <h2 className="font-semibold mb-3 flex items-center gap-2"><Plus className="h-4 w-4" /> ম্যানুয়াল এন্ট্রি</h2>
