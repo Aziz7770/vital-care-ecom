@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Upload, Plus, Trash2, History, Package, ArrowLeft, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { parseNotebookText, type ParsedRecord } from "@/lib/notebookParser";
+
 
 interface LegacyOrder {
   id: string;
