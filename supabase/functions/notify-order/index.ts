@@ -192,6 +192,8 @@ Deno.serve(async (req) => {
       capi,
     } = body;
 
+    const historyBlock = await buildHistoryBlock(phone, orderId);
+
     let message = `🛒 *নতুন অর্ডার!*\n\n`;
     message += `🆔 *অর্ডার:* ${orderId}\n`;
     message += `👤 *নাম:* ${customerName}\n`;
@@ -200,6 +202,7 @@ Deno.serve(async (req) => {
     if (district) message += `🏙️ *জেলা:* ${district}\n`;
     message += `📍 *ঠিকানা:* ${address}\n`;
     if (note) message += `📝 *নোট:* ${note}\n`;
+    message += historyBlock;
     message += `\n📦 *পণ্যসমূহ:*\n`;
     for (const item of items) {
       message += `• ${item.name} × ${item.quantity} = ৳${item.price * item.quantity}\n`;
