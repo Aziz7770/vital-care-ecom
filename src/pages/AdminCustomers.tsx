@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Upload, Plus, Trash2, History, Package, ArrowLeft, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { parseNotebookText, type ParsedRecord } from "@/lib/notebookParser";
+
 
 interface LegacyOrder {
   id: string;
@@ -63,6 +65,10 @@ const AdminCustomers = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const bulkRef = useRef<HTMLInputElement>(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState("");
+
 
   useEffect(() => {
     const check = async () => {
@@ -243,6 +249,105 @@ const AdminCustomers = () => {
     }
   };
 
+  // ---- Bulk notebook (.docx / .txt / .zip) import ----
+  const extractText = async (file: File): Promise<string> => {
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith(".docx")) {
+      const mammoth = await import("mammoth/mammoth.browser");
+      const buf = await file.arrayBuffer();
+      const res = await mammoth.extractRawText({ arrayBuffer: buf });
+      return res.value;
+    }
+    return file.text();
+  };
+
+  const collectFiles = async (files: File[]): Promise<File[]> => {
+    const out: File[] = [];
+    for (const f of files) {
+      if (f.name.toLowerCase().endsWith(".zip")) {
+        const JSZip = (await import("jszip")).default;
+        const zip = await JSZip.loadAsync(f);
+        for (const entry of Object.values(zip.files)) {
+          if (entry.dir) continue;
+          const n = entry.name.toLowerCase();
+          if (n.includes("__macosx") || n.split("/").pop()?.startsWith(".")) continue;
+          if (!/\.(docx|txt)$/.test(n)) continue;
+          const blob = await entry.async("blob");
+          out.push(new File([blob], entry.name));
+        }
+      } else if (/\.(docx|txt)$/.test(f.name.toLowerCase())) {
+        out.push(f);
+      }
+    }
+    return out;
+  };
+
+  const handleNotebookFiles = async (fileList: FileList) => {
+    setBulkImporting(true);
+    setBulkProgress("ফাইল পড়া হচ্ছে…");
+    try {
+      const files = await collectFiles(Array.from(fileList));
+      if (!files.length) throw new Error("কোনো .docx / .txt ফাইল পাওয়া যায়নি");
+
+      const all: ParsedRecord[] = [];
+      let failed = 0;
+      for (let i = 0; i < files.length; i++) {
+        setBulkProgress(`পড়া হচ্ছে ${i + 1}/${files.length}: ${files[i].name}`);
+        try {
+          all.push(...parseNotebookText(await extractText(files[i])));
+        } catch {
+          failed++;
+        }
+      }
+      if (!all.length) throw new Error("কোনো কাস্টমার তথ্য পাওয়া যায়নি");
+
+      // de-duplicate within upload
+      const seen = new Set<string>();
+      const unique = all.filter((r) => {
+        const k = normalizePhone(r.phone);
+        if (!k || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+
+      // skip phones already in database
+      setBulkProgress("ডুপ্লিকেট বাদ দেওয়া হচ্ছে…");
+      const existing = new Set<string>();
+      const keys = Array.from(seen);
+      for (let i = 0; i < keys.length; i += 300) {
+        const { data } = await supabase
+          .from("legacy_orders")
+          .select("phone_normalized")
+          .in("phone_normalized", keys.slice(i, i + 300));
+        (data || []).forEach((d) => d.phone_normalized && existing.add(d.phone_normalized));
+      }
+      const fresh = unique.filter((r) => !existing.has(normalizePhone(r.phone)));
+      if (!fresh.length) throw new Error("সব রেকর্ড আগে থেকেই আছে");
+
+      let inserted = 0;
+      for (let i = 0; i < fresh.length; i += 400) {
+        const chunk = fresh.slice(i, i + 400);
+        setBulkProgress(`সেভ হচ্ছে ${inserted}/${fresh.length}…`);
+        const { error } = await supabase.from("legacy_orders").insert(chunk);
+        if (error) throw new Error(error.message);
+        inserted += chunk.length;
+      }
+      toast.success(
+        `${files.length} ফাইল থেকে ${inserted} জন কাস্টমার যোগ হয়েছে` +
+          (unique.length - fresh.length ? ` (${unique.length - fresh.length} ডুপ্লিকেট বাদ)` : "") +
+          (failed ? ` — ${failed} ফাইল পড়া যায়নি` : "")
+      );
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ইমপোর্ট ব্যর্থ হয়েছে");
+    } finally {
+      setBulkImporting(false);
+      setBulkProgress("");
+      if (bulkRef.current) bulkRef.current.value = "";
+    }
+  };
+
+
   if (authChecking) {
     return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">লোড হচ্ছে…</div>;
   }
@@ -315,6 +420,31 @@ const AdminCustomers = () => {
           {importing ? "ইমপোর্ট হচ্ছে…" : "CSV ফাইল নির্বাচন করুন"}
         </Button>
       </div>
+
+      {/* Notebook bulk import */}
+      <div className="rounded-lg border-2 border-primary/30 bg-card p-4 mb-6">
+        <h2 className="font-semibold mb-1 flex items-center gap-2">
+          <Upload className="h-4 w-4" /> নোটবুক ফাইল ইমপোর্ট (Word / TXT / ZIP)
+        </h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          একসাথে শত শত <code>.docx</code> বা <code>.txt</code> ফাইল নির্বাচন করুন (অথবা সব ফাইল একটি
+          <code> .zip</code>-এ দিন)। এলোমেলো লেখা থেকেই নাম, ফোন, ঠিকানা ও টাকার পরিমাণ স্বয়ংক্রিয়ভাবে
+          আলাদা হবে এবং ডুপ্লিকেট ফোন নম্বর বাদ যাবে।
+        </p>
+        <input
+          ref={bulkRef}
+          type="file"
+          multiple
+          accept=".docx,.txt,.zip"
+          className="hidden"
+          onChange={(e) => e.target.files?.length && handleNotebookFiles(e.target.files)}
+        />
+        <Button onClick={() => bulkRef.current?.click()} disabled={bulkImporting}>
+          {bulkImporting ? "ইমপোর্ট হচ্ছে…" : "ফাইলগুলো নির্বাচন করুন"}
+        </Button>
+        {bulkProgress && <p className="text-xs text-muted-foreground mt-2">{bulkProgress}</p>}
+      </div>
+
 
       {/* Manual entry */}
       <form onSubmit={addOrder} className="rounded-lg border bg-card p-4 mb-6">
