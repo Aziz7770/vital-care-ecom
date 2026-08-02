@@ -200,7 +200,10 @@ const AdminOrders = () => {
           <Package className="h-6 w-6 text-primary" />
           অর্ডার ম্যানেজমেন্ট
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" asChild className="text-xs">
+            <Link to="/admin/customers"><History className="h-3 w-3 mr-1" /> কাস্টমার হিস্টোরি</Link>
+          </Button>
           <Button size="sm" variant="outline" onClick={fetchOrders} className="text-xs">
             <RefreshCw className="h-3 w-3 mr-1" /> রিফ্রেশ
           </Button>
