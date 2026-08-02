@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw, LogOut } from "lucide-react";
+import { Lock, Unlock, Package, Truck, XCircle, Clock, CheckCircle, Filter, RefreshCw, LogOut, History as HistoryIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -200,7 +200,10 @@ const AdminOrders = () => {
           <Package className="h-6 w-6 text-primary" />
           অর্ডার ম্যানেজমেন্ট
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" asChild className="text-xs">
+            <Link to="/admin/customers"><HistoryIcon className="h-3 w-3 mr-1" /> কাস্টমার হিস্টোরি</Link>
+          </Button>
           <Button size="sm" variant="outline" onClick={fetchOrders} className="text-xs">
             <RefreshCw className="h-3 w-3 mr-1" /> রিফ্রেশ
           </Button>

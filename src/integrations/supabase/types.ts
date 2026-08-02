@@ -41,6 +41,51 @@ export type Database = {
         }
         Relationships: []
       }
+      legacy_orders: {
+        Row: {
+          address: string
+          created_at: string
+          customer_name: string
+          id: string
+          items_text: string
+          note: string
+          order_date: string | null
+          phone: string
+          phone_normalized: string | null
+          source: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          customer_name: string
+          id?: string
+          items_text?: string
+          note?: string
+          order_date?: string | null
+          phone: string
+          phone_normalized?: string | null
+          source?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          customer_name?: string
+          id?: string
+          items_text?: string
+          note?: string
+          order_date?: string | null
+          phone?: string
+          phone_normalized?: string | null
+          source?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string
@@ -231,6 +276,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_customer_history: {
+        Args: { _phone: string }
+        Returns: {
+          first_order_date: string
+          last_order_date: string
+          last_order_items: string
+          legacy_count: number
+          online_count: number
+          total_orders: number
+          total_spent: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -238,6 +295,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_bd_phone: { Args: { _phone: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"

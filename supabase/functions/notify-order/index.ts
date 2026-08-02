@@ -96,6 +96,90 @@ async function sendMetaCapi(params: {
   }
 }
 
+interface HistoryRow { dt: string | null; total: number; items: string; src: "online" | "legacy" }
+
+function bnNum(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "অজানা";
+  try {
+    return new Date(iso).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+async function buildHistoryBlock(phone: string, currentOrderId: string): Promise<string> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_KEY) return "";
+
+  const ph = normalizePhone(phone);
+  if (!ph) return "";
+
+  const headers = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" };
+
+  try {
+    const [onlineRes, legacyRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/orders?select=order_id,created_at,total,items,status,phone&status=neq.cancelled&order=created_at.desc&limit=200`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/legacy_orders?select=order_date,created_at,total,items_text,phone_normalized&phone_normalized=eq.${encodeURIComponent(ph)}&order=order_date.desc&limit=200`, { headers }),
+    ]);
+
+    const onlineAll = onlineRes.ok ? await onlineRes.json() : [];
+    const legacyAll = legacyRes.ok ? await legacyRes.json() : [];
+
+    const rows: HistoryRow[] = [];
+
+    for (const o of onlineAll) {
+      if (normalizePhone(o.phone) !== ph) continue;
+      if (o.order_id === currentOrderId) continue;
+      const items = Array.isArray(o.items)
+        ? o.items.map((i: { name: string; quantity: number }) => `${i.name} ×${i.quantity}`).join(", ")
+        : "";
+      rows.push({ dt: o.created_at, total: Number(o.total) || 0, items, src: "online" });
+    }
+
+    for (const l of legacyAll) {
+      rows.push({
+        dt: l.order_date || l.created_at,
+        total: Number(l.total) || 0,
+        items: l.items_text || "",
+        src: "legacy",
+      });
+    }
+
+    if (rows.length === 0) {
+      return `\n🆕 *নতুন কাস্টমার* — এটি তার প্রথম অর্ডার\n`;
+    }
+
+    rows.sort((a, b) => new Date(b.dt || 0).getTime() - new Date(a.dt || 0).getTime());
+    const spent = rows.reduce((s, r) => s + r.total, 0);
+    const last = rows[0];
+    const first = rows[rows.length - 1];
+    const legacyCount = rows.filter((r) => r.src === "legacy").length;
+
+    let block = `\n🔁 *রিপিট কাস্টমার* — এটি তার ${bnNum(rows.length + 1)} নম্বর অর্ডার\n`;
+    block += `📊 *আগের অর্ডার:* ${bnNum(rows.length)} টি (নোটবুক: ${bnNum(legacyCount)}, অনলাইন: ${bnNum(rows.length - legacyCount)})\n`;
+    block += `💵 *আগে মোট খরচ:* ৳${bnNum(spent)}\n`;
+    block += `🕐 *শেষ অর্ডার:* ${fmtDate(last.dt)}${last.items ? ` — ${last.items}` : ""}\n`;
+    block += `📅 *প্রথম অর্ডার:* ${fmtDate(first.dt)}\n`;
+
+    const recent = rows.slice(0, 3);
+    block += `\n📚 *সাম্প্রতিক হিস্টোরি:*\n`;
+    for (const r of recent) {
+      block += `  • ${fmtDate(r.dt)} — ${r.items || "বিবরণ নেই"} — ৳${bnNum(r.total)}\n`;
+    }
+    if (rows.length > 3) block += `  … আরও ${bnNum(rows.length - 3)} টি অর্ডার\n`;
+
+    return block;
+  } catch (e) {
+    console.error("history lookup failed:", e);
+    return "";
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -108,6 +192,8 @@ Deno.serve(async (req) => {
       capi,
     } = body;
 
+    const historyBlock = await buildHistoryBlock(phone, orderId);
+
     let message = `🛒 *নতুন অর্ডার!*\n\n`;
     message += `🆔 *অর্ডার:* ${orderId}\n`;
     message += `👤 *নাম:* ${customerName}\n`;
@@ -116,6 +202,7 @@ Deno.serve(async (req) => {
     if (district) message += `🏙️ *জেলা:* ${district}\n`;
     message += `📍 *ঠিকানা:* ${address}\n`;
     if (note) message += `📝 *নোট:* ${note}\n`;
+    message += historyBlock;
     message += `\n📦 *পণ্যসমূহ:*\n`;
     for (const item of items) {
       message += `• ${item.name} × ${item.quantity} = ৳${item.price * item.quantity}\n`;
