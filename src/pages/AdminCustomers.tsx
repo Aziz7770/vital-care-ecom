@@ -9,6 +9,8 @@ import { Search, Upload, Plus, Trash2, History, Package, ArrowLeft, RefreshCw } 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { parseNotebookText, type ParsedRecord } from "@/lib/notebookParser";
+import JSZip from "jszip";
+import * as mammoth from "mammoth/mammoth.browser";
 
 
 interface LegacyOrder {
