@@ -291,15 +291,22 @@ const AdminCustomers = () => {
 
       const all: ParsedRecord[] = [];
       let failed = 0;
+      let empty = 0;
       for (let i = 0; i < files.length; i++) {
         setBulkProgress(`পড়া হচ্ছে ${i + 1}/${files.length}: ${files[i].name}`);
         try {
-          all.push(...parseNotebookText(await extractText(files[i])));
+          const parsed = parseNotebookText(await extractText(files[i]));
+          if (parsed.length) all.push(...parsed);
+          else empty++;
         } catch {
           failed++;
         }
       }
-      if (!all.length) throw new Error("কোনো কাস্টমার তথ্য পাওয়া যায়নি");
+      if (!all.length) {
+        throw new Error(
+          `${files.length}টি ফাইল পড়া হয়েছে, কিন্তু বৈধ বাংলাদেশি ফোন নম্বর পাওয়া যায়নি`
+        );
+      }
 
       // de-duplicate within upload
       const seen = new Set<string>();
@@ -335,6 +342,7 @@ const AdminCustomers = () => {
       toast.success(
         `${files.length} ফাইল থেকে ${inserted} জন কাস্টমার যোগ হয়েছে` +
           (unique.length - fresh.length ? ` (${unique.length - fresh.length} ডুপ্লিকেট বাদ)` : "") +
+          (empty ? ` — ${empty} ফাইলে ফোন নম্বর ছিল না` : "") +
           (failed ? ` — ${failed} ফাইল পড়া যায়নি` : "")
       );
       load();
