@@ -20,6 +20,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ReturnPolicy from "./pages/ReturnPolicy";
 import AdminOrders from "./pages/AdminOrders";
+import AdminCustomers from "./pages/AdminCustomers";
 import Auth from "./pages/Auth";
 import SlugRouter from "./components/SlugRouter";
 
