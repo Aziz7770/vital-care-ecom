@@ -202,7 +202,7 @@ const AdminOrders = () => {
         </h1>
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" asChild className="text-xs">
-            <Link to="/admin/customers"><History className="h-3 w-3 mr-1" /> কাস্টমার হিস্টোরি</Link>
+            <Link to="/admin/customers"><HistoryIcon className="h-3 w-3 mr-1" /> কাস্টমার হিস্টোরি</Link>
           </Button>
           <Button size="sm" variant="outline" onClick={fetchOrders} className="text-xs">
             <RefreshCw className="h-3 w-3 mr-1" /> রিফ্রেশ
