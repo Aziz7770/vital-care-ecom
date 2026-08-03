@@ -271,6 +271,12 @@ Deno.serve(async (req) => {
 
     const results: Record<string, unknown> = {};
 
+    // Auto-save this order into the customer history database
+    results.history = await recordOrderInHistory({
+      orderId, customerName, phone, address, note, items, total,
+    });
+
+
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
