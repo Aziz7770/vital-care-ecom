@@ -121,30 +121,27 @@ const AdminCustomers = () => {
 
   const addCheckedPhoneAsOrder = async () => {
     if (!checkResult) return;
-    if (!quickForm.customer_name.trim()) {
-      toast.error("কাস্টমারের নাম দিন");
-      return;
-    }
     setQuickSaving(true);
+    const existingName = checkResult.legacy.find((l: any) => l.customer_name?.trim())?.customer_name?.trim();
     const { error } = await supabase.from("legacy_orders").insert({
-      customer_name: quickForm.customer_name.trim(),
+      customer_name: existingName || "নাম নেই",
       phone: checkPhone.trim(),
-      address: quickForm.address.trim(),
-      items_text: quickForm.items_text.trim(),
-      total: Number(quickForm.total) || 0,
+      address: "",
+      items_text: "",
+      total: 0,
       order_date: new Date().toISOString().slice(0, 10),
-      note: quickForm.note.trim(),
+      note: "নম্বর টেস্ট থেকে যোগ",
     });
     setQuickSaving(false);
     if (error) {
       toast.error("সেভ করতে সমস্যা হয়েছে");
       return;
     }
-    toast.success("নতুন অর্ডার হিসেবে যোগ হয়েছে");
-    setQuickForm({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+    toast.success("নম্বরটি যোগ হয়েছে");
     await runPhoneCheck();
     load();
   };
+
 
 
 
