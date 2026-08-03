@@ -80,8 +80,8 @@ const AdminCustomers = () => {
     onlineCount: number;
     onlineTotal: number;
   } | null>(null);
-  const [quickForm, setQuickForm] = useState({ customer_name: "", items_text: "", total: "", address: "", note: "" });
   const [quickSaving, setQuickSaving] = useState(false);
+
 
   const runPhoneCheck = async (raw?: string) => {
     const ph = normalizePhone(raw ?? checkPhone);
@@ -121,30 +121,27 @@ const AdminCustomers = () => {
 
   const addCheckedPhoneAsOrder = async () => {
     if (!checkResult) return;
-    if (!quickForm.customer_name.trim()) {
-      toast.error("কাস্টমারের নাম দিন");
-      return;
-    }
     setQuickSaving(true);
+    const existingName = checkResult.legacy.find((l: any) => l.customer_name?.trim())?.customer_name?.trim();
     const { error } = await supabase.from("legacy_orders").insert({
-      customer_name: quickForm.customer_name.trim(),
+      customer_name: existingName || "নাম নেই",
       phone: checkPhone.trim(),
-      address: quickForm.address.trim(),
-      items_text: quickForm.items_text.trim(),
-      total: Number(quickForm.total) || 0,
+      address: "",
+      items_text: "",
+      total: 0,
       order_date: new Date().toISOString().slice(0, 10),
-      note: quickForm.note.trim(),
+      note: "নম্বর টেস্ট থেকে যোগ",
     });
     setQuickSaving(false);
     if (error) {
       toast.error("সেভ করতে সমস্যা হয়েছে");
       return;
     }
-    toast.success("নতুন অর্ডার হিসেবে যোগ হয়েছে");
-    setQuickForm({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+    toast.success("নম্বরটি যোগ হয়েছে");
     await runPhoneCheck();
     load();
   };
+
 
 
 
@@ -539,35 +536,15 @@ const AdminCustomers = () => {
             )}
 
             <div className="mt-4 border-t pt-3">
-              <p className="text-sm font-medium mb-2">এই নম্বরটি নতুন অর্ডার হিসেবে যোগ করুন</p>
-              <div className="grid sm:grid-cols-2 gap-2">
-                <Input
-                  placeholder="কাস্টমারের নাম *"
-                  value={quickForm.customer_name}
-                  onChange={(e) => setQuickForm({ ...quickForm, customer_name: e.target.value })}
-                />
-                <Input
-                  placeholder="ঠিকানা"
-                  value={quickForm.address}
-                  onChange={(e) => setQuickForm({ ...quickForm, address: e.target.value })}
-                />
-                <Input
-                  placeholder="পণ্য / ঔষধ"
-                  value={quickForm.items_text}
-                  onChange={(e) => setQuickForm({ ...quickForm, items_text: e.target.value })}
-                />
-                <Input
-                  type="number"
-                  placeholder="মোট টাকা"
-                  value={quickForm.total}
-                  onChange={(e) => setQuickForm({ ...quickForm, total: e.target.value })}
-                />
-              </div>
-              <Button className="mt-3" onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
+              <p className="text-sm text-muted-foreground mb-2">
+                শুধু এই নম্বরটি নতুন এন্ট্রি হিসেবে যোগ হবে — নাম/পণ্য/টাকা লাগবে না।
+              </p>
+              <Button onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
                 <Plus className="h-4 w-4 mr-1" />
-                {quickSaving ? "সেভ হচ্ছে…" : "নতুন অর্ডার হিসেবে যোগ করুন"}
+                {quickSaving ? "সেভ হচ্ছে…" : "এই নম্বরটি যোগ করুন"}
               </Button>
             </div>
+
           </div>
         )}
       </div>
