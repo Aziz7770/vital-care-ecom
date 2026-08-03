@@ -488,6 +488,90 @@ const AdminCustomers = () => {
         )}
       </div>
 
+      {/* Phone check / duplicate detection */}
+      <div className="rounded-lg border-2 border-primary/40 bg-card p-4 mb-6">
+        <h2 className="font-semibold mb-1 flex items-center gap-2">
+          <Search className="h-4 w-4" /> নম্বর টেস্ট / ডুপ্লিকেট চেক
+        </h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          শুধু ফোন নম্বর দিয়ে চেক করুন — এই নম্বরে আগে কোনো অর্ডার (নোটবুক বা অনলাইন) আছে কিনা সঙ্গে সঙ্গে দেখাবে।
+          চাইলে একই নম্বরটি নতুন অর্ডার হিসেবেও যোগ করতে পারবেন।
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          <Input
+            value={checkPhone}
+            onChange={(e) => setCheckPhone(e.target.value)}
+            placeholder="01XXXXXXXXX"
+            inputMode="tel"
+            className="flex-1 min-w-[200px]"
+            onKeyDown={(e) => e.key === "Enter" && runPhoneCheck()}
+          />
+          <Button onClick={() => runPhoneCheck()} disabled={checking}>
+            {checking ? "চেক হচ্ছে…" : "চেক করুন"}
+          </Button>
+          <Button variant="outline" onClick={() => { setCheckPhone(""); setCheckResult(null); }}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {checkResult && (
+          <div className="mt-4 rounded-md border bg-muted/40 p-4">
+            {checkResult.legacy.length + checkResult.onlineCount > 0 ? (
+              <>
+                <Badge variant="destructive" className="mb-2">
+                  ⚠️ ডুপ্লিকেট নম্বর — মোট {checkResult.legacy.length + checkResult.onlineCount} টি অর্ডার
+                </Badge>
+                <div className="text-sm space-y-1">
+                  <div>নোটবুক/পুরনো: <strong>{checkResult.legacy.length}</strong> | অনলাইন: <strong>{checkResult.onlineCount}</strong></div>
+                  {checkResult.legacy[0] && (
+                    <div>
+                      শেষ রেকর্ড: {checkResult.legacy[0].customer_name} — {checkResult.legacy[0].items_text || "বিবরণ নেই"} — ৳
+                      {Number(checkResult.legacy[0].total).toLocaleString()} ({fmtDate(checkResult.legacy[0].order_date)})
+                    </div>
+                  )}
+                  {checkResult.onlineTotal > 0 && (
+                    <div>অনলাইনে মোট খরচ: ৳{checkResult.onlineTotal.toLocaleString()}</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Badge variant="secondary">🆕 নতুন নম্বর — আগে কোনো অর্ডার পাওয়া যায়নি</Badge>
+            )}
+
+            <div className="mt-4 border-t pt-3">
+              <p className="text-sm font-medium mb-2">এই নম্বরটি নতুন অর্ডার হিসেবে যোগ করুন</p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Input
+                  placeholder="কাস্টমারের নাম *"
+                  value={quickForm.customer_name}
+                  onChange={(e) => setQuickForm({ ...quickForm, customer_name: e.target.value })}
+                />
+                <Input
+                  placeholder="ঠিকানা"
+                  value={quickForm.address}
+                  onChange={(e) => setQuickForm({ ...quickForm, address: e.target.value })}
+                />
+                <Input
+                  placeholder="পণ্য / ঔষধ"
+                  value={quickForm.items_text}
+                  onChange={(e) => setQuickForm({ ...quickForm, items_text: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  placeholder="মোট টাকা"
+                  value={quickForm.total}
+                  onChange={(e) => setQuickForm({ ...quickForm, total: e.target.value })}
+                />
+              </div>
+              <Button className="mt-3" onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
+                <Plus className="h-4 w-4 mr-1" />
+                {quickSaving ? "সেভ হচ্ছে…" : "নতুন অর্ডার হিসেবে যোগ করুন"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* CSV import */}
       <div className="rounded-lg border bg-card p-4 mb-6">
         <h2 className="font-semibold mb-1 flex items-center gap-2"><Upload className="h-4 w-4" /> CSV/Excel ইমপোর্ট</h2>
