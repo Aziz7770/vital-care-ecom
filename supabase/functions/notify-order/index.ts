@@ -152,7 +152,7 @@ async function recordOrderInHistory(o: {
       body: JSON.stringify({
         customer_name: o.customerName,
         phone: o.phone,
-        phone_normalized: normalizePhone(o.phone),
+        
         address: o.address || "",
         items_text: itemsText,
         total: Number(o.total) || 0,
