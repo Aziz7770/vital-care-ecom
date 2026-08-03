@@ -80,8 +80,8 @@ const AdminCustomers = () => {
     onlineCount: number;
     onlineTotal: number;
   } | null>(null);
-  const [quickForm, setQuickForm] = useState({ customer_name: "", items_text: "", total: "", address: "", note: "" });
   const [quickSaving, setQuickSaving] = useState(false);
+
 
   const runPhoneCheck = async (raw?: string) => {
     const ph = normalizePhone(raw ?? checkPhone);
