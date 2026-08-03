@@ -71,6 +71,83 @@ const AdminCustomers = () => {
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState("");
 
+  // ---- Phone check (duplicate detection) ----
+  const [checkPhone, setCheckPhone] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<{
+    phone: string;
+    legacy: LegacyOrder[];
+    onlineCount: number;
+    onlineTotal: number;
+  } | null>(null);
+  const [quickForm, setQuickForm] = useState({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const runPhoneCheck = async (raw?: string) => {
+    const ph = normalizePhone(raw ?? checkPhone);
+    if (ph.length < 10) {
+      toast.error("পূর্ণ ফোন নম্বর দিন");
+      return null;
+    }
+    setChecking(true);
+    const [{ data: legacy, error: le }, { data: online, error: oe }] = await Promise.all([
+      supabase
+        .from("legacy_orders")
+        .select("*")
+        .eq("phone_normalized", ph)
+        .order("order_date", { ascending: false, nullsFirst: false }),
+      supabase.from("orders").select("total, phone, status"),
+    ]);
+    setChecking(false);
+    if (le || oe) {
+      toast.error("চেক করতে সমস্যা হয়েছে");
+      return null;
+    }
+    const onlineRows = (online || []).filter(
+      (o) => normalizePhone(o.phone) === ph && o.status !== "cancelled"
+    );
+    const result = {
+      phone: ph,
+      legacy: (legacy as LegacyOrder[]) || [],
+      onlineCount: onlineRows.length,
+      onlineTotal: onlineRows.reduce((s, o) => s + Number(o.total || 0), 0),
+    };
+    setCheckResult(result);
+    const found = result.legacy.length + result.onlineCount;
+    if (found > 0) toast.warning(`⚠️ ডুপ্লিকেট! এই নম্বরে আগে ${found} টি অর্ডার আছে`);
+    else toast.success("🆕 নতুন নম্বর — আগে কোনো অর্ডার নেই");
+    return result;
+  };
+
+  const addCheckedPhoneAsOrder = async () => {
+    if (!checkResult) return;
+    if (!quickForm.customer_name.trim()) {
+      toast.error("কাস্টমারের নাম দিন");
+      return;
+    }
+    setQuickSaving(true);
+    const { error } = await supabase.from("legacy_orders").insert({
+      customer_name: quickForm.customer_name.trim(),
+      phone: checkPhone.trim(),
+      address: quickForm.address.trim(),
+      items_text: quickForm.items_text.trim(),
+      total: Number(quickForm.total) || 0,
+      order_date: new Date().toISOString().slice(0, 10),
+      note: quickForm.note.trim(),
+    });
+    setQuickSaving(false);
+    if (error) {
+      toast.error("সেভ করতে সমস্যা হয়েছে");
+      return;
+    }
+    toast.success("নতুন অর্ডার হিসেবে যোগ হয়েছে");
+    setQuickForm({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+    await runPhoneCheck();
+    load();
+  };
+
+
+
 
   useEffect(() => {
     const check = async () => {
