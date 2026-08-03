@@ -71,6 +71,83 @@ const AdminCustomers = () => {
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState("");
 
+  // ---- Phone check (duplicate detection) ----
+  const [checkPhone, setCheckPhone] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<{
+    phone: string;
+    legacy: LegacyOrder[];
+    onlineCount: number;
+    onlineTotal: number;
+  } | null>(null);
+  const [quickForm, setQuickForm] = useState({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  const runPhoneCheck = async (raw?: string) => {
+    const ph = normalizePhone(raw ?? checkPhone);
+    if (ph.length < 10) {
+      toast.error("পূর্ণ ফোন নম্বর দিন");
+      return null;
+    }
+    setChecking(true);
+    const [{ data: legacy, error: le }, { data: online, error: oe }] = await Promise.all([
+      supabase
+        .from("legacy_orders")
+        .select("*")
+        .eq("phone_normalized", ph)
+        .order("order_date", { ascending: false, nullsFirst: false }),
+      supabase.from("orders").select("total, phone, status"),
+    ]);
+    setChecking(false);
+    if (le || oe) {
+      toast.error("চেক করতে সমস্যা হয়েছে");
+      return null;
+    }
+    const onlineRows = (online || []).filter(
+      (o) => normalizePhone(o.phone) === ph && o.status !== "cancelled"
+    );
+    const result = {
+      phone: ph,
+      legacy: (legacy as LegacyOrder[]) || [],
+      onlineCount: onlineRows.length,
+      onlineTotal: onlineRows.reduce((s, o) => s + Number(o.total || 0), 0),
+    };
+    setCheckResult(result);
+    const found = result.legacy.length + result.onlineCount;
+    if (found > 0) toast.warning(`⚠️ ডুপ্লিকেট! এই নম্বরে আগে ${found} টি অর্ডার আছে`);
+    else toast.success("🆕 নতুন নম্বর — আগে কোনো অর্ডার নেই");
+    return result;
+  };
+
+  const addCheckedPhoneAsOrder = async () => {
+    if (!checkResult) return;
+    if (!quickForm.customer_name.trim()) {
+      toast.error("কাস্টমারের নাম দিন");
+      return;
+    }
+    setQuickSaving(true);
+    const { error } = await supabase.from("legacy_orders").insert({
+      customer_name: quickForm.customer_name.trim(),
+      phone: checkPhone.trim(),
+      address: quickForm.address.trim(),
+      items_text: quickForm.items_text.trim(),
+      total: Number(quickForm.total) || 0,
+      order_date: new Date().toISOString().slice(0, 10),
+      note: quickForm.note.trim(),
+    });
+    setQuickSaving(false);
+    if (error) {
+      toast.error("সেভ করতে সমস্যা হয়েছে");
+      return;
+    }
+    toast.success("নতুন অর্ডার হিসেবে যোগ হয়েছে");
+    setQuickForm({ customer_name: "", items_text: "", total: "", address: "", note: "" });
+    await runPhoneCheck();
+    load();
+  };
+
+
+
 
   useEffect(() => {
     const check = async () => {
@@ -407,6 +484,90 @@ const AdminCustomers = () => {
             ) : (
               <Badge variant="secondary">🆕 নতুন কাস্টমার — কোনো পুরনো অর্ডার নেই</Badge>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Phone check / duplicate detection */}
+      <div className="rounded-lg border-2 border-primary/40 bg-card p-4 mb-6">
+        <h2 className="font-semibold mb-1 flex items-center gap-2">
+          <Search className="h-4 w-4" /> নম্বর টেস্ট / ডুপ্লিকেট চেক
+        </h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          শুধু ফোন নম্বর দিয়ে চেক করুন — এই নম্বরে আগে কোনো অর্ডার (নোটবুক বা অনলাইন) আছে কিনা সঙ্গে সঙ্গে দেখাবে।
+          চাইলে একই নম্বরটি নতুন অর্ডার হিসেবেও যোগ করতে পারবেন।
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          <Input
+            value={checkPhone}
+            onChange={(e) => setCheckPhone(e.target.value)}
+            placeholder="01XXXXXXXXX"
+            inputMode="tel"
+            className="flex-1 min-w-[200px]"
+            onKeyDown={(e) => e.key === "Enter" && runPhoneCheck()}
+          />
+          <Button onClick={() => runPhoneCheck()} disabled={checking}>
+            {checking ? "চেক হচ্ছে…" : "চেক করুন"}
+          </Button>
+          <Button variant="outline" onClick={() => { setCheckPhone(""); setCheckResult(null); }}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {checkResult && (
+          <div className="mt-4 rounded-md border bg-muted/40 p-4">
+            {checkResult.legacy.length + checkResult.onlineCount > 0 ? (
+              <>
+                <Badge variant="destructive" className="mb-2">
+                  ⚠️ ডুপ্লিকেট নম্বর — মোট {checkResult.legacy.length + checkResult.onlineCount} টি অর্ডার
+                </Badge>
+                <div className="text-sm space-y-1">
+                  <div>নোটবুক/পুরনো: <strong>{checkResult.legacy.length}</strong> | অনলাইন: <strong>{checkResult.onlineCount}</strong></div>
+                  {checkResult.legacy[0] && (
+                    <div>
+                      শেষ রেকর্ড: {checkResult.legacy[0].customer_name} — {checkResult.legacy[0].items_text || "বিবরণ নেই"} — ৳
+                      {Number(checkResult.legacy[0].total).toLocaleString()} ({fmtDate(checkResult.legacy[0].order_date)})
+                    </div>
+                  )}
+                  {checkResult.onlineTotal > 0 && (
+                    <div>অনলাইনে মোট খরচ: ৳{checkResult.onlineTotal.toLocaleString()}</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Badge variant="secondary">🆕 নতুন নম্বর — আগে কোনো অর্ডার পাওয়া যায়নি</Badge>
+            )}
+
+            <div className="mt-4 border-t pt-3">
+              <p className="text-sm font-medium mb-2">এই নম্বরটি নতুন অর্ডার হিসেবে যোগ করুন</p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Input
+                  placeholder="কাস্টমারের নাম *"
+                  value={quickForm.customer_name}
+                  onChange={(e) => setQuickForm({ ...quickForm, customer_name: e.target.value })}
+                />
+                <Input
+                  placeholder="ঠিকানা"
+                  value={quickForm.address}
+                  onChange={(e) => setQuickForm({ ...quickForm, address: e.target.value })}
+                />
+                <Input
+                  placeholder="পণ্য / ঔষধ"
+                  value={quickForm.items_text}
+                  onChange={(e) => setQuickForm({ ...quickForm, items_text: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  placeholder="মোট টাকা"
+                  value={quickForm.total}
+                  onChange={(e) => setQuickForm({ ...quickForm, total: e.target.value })}
+                />
+              </div>
+              <Button className="mt-3" onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
+                <Plus className="h-4 w-4 mr-1" />
+                {quickSaving ? "সেভ হচ্ছে…" : "নতুন অর্ডার হিসেবে যোগ করুন"}
+              </Button>
+            </div>
           </div>
         )}
       </div>

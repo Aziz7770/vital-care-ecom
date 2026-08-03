@@ -111,6 +111,63 @@ function fmtDate(iso: string | null): string {
   }
 }
 
+// Save every new online order into the customer-history table (legacy_orders)
+// with source='online' so the admin panel shows one combined customer database.
+// Duplicate-safe: an order id that is already recorded is skipped.
+async function recordOrderInHistory(o: {
+  orderId: string;
+  customerName: string;
+  phone: string;
+  address: string;
+  note?: string;
+  items: { name: string; quantity: number; price: number }[];
+  total: number;
+}): Promise<{ ok: boolean; duplicate?: boolean; error?: string }> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_KEY) return { ok: false, error: "no_service_key" };
+
+  const headers = {
+    apikey: SERVICE_KEY,
+    Authorization: `Bearer ${SERVICE_KEY}`,
+    "Content-Type": "application/json",
+  };
+
+  try {
+    const tag = `অনলাইন অর্ডার: ${o.orderId}`;
+    const dupRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/legacy_orders?select=id&note=eq.${encodeURIComponent(tag)}&limit=1`,
+      { headers },
+    );
+    const dup = dupRes.ok ? await dupRes.json() : [];
+    if (Array.isArray(dup) && dup.length > 0) return { ok: true, duplicate: true };
+
+    const itemsText = (o.items || [])
+      .map((i) => `${i.name} ×${i.quantity}`)
+      .join(", ");
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/legacy_orders`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        customer_name: o.customerName,
+        phone: o.phone,
+        
+        address: o.address || "",
+        items_text: itemsText,
+        total: Number(o.total) || 0,
+        order_date: new Date().toISOString().slice(0, 10),
+        note: tag,
+        source: "online",
+      }),
+    });
+    if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 async function buildHistoryBlock(phone: string, currentOrderId: string): Promise<string> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -124,7 +181,7 @@ async function buildHistoryBlock(phone: string, currentOrderId: string): Promise
   try {
     const [onlineRes, legacyRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/orders?select=order_id,created_at,total,items,status,phone&status=neq.cancelled&order=created_at.desc&limit=200`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/legacy_orders?select=order_date,created_at,total,items_text,phone_normalized&phone_normalized=eq.${encodeURIComponent(ph)}&order=order_date.desc&limit=200`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/legacy_orders?select=order_date,created_at,total,items_text,phone_normalized&phone_normalized=eq.${encodeURIComponent(ph)}&source=neq.online&order=order_date.desc&limit=200`, { headers }),
     ]);
 
     const onlineAll = onlineRes.ok ? await onlineRes.json() : [];
@@ -213,6 +270,12 @@ Deno.serve(async (req) => {
     message += `💳 *পেমেন্ট:* ক্যাশ অন ডেলিভারি`;
 
     const results: Record<string, unknown> = {};
+
+    // Auto-save this order into the customer history database
+    results.history = await recordOrderInHistory({
+      orderId, customerName, phone, address, note, items, total,
+    });
+
 
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
