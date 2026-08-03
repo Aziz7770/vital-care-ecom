@@ -539,35 +539,15 @@ const AdminCustomers = () => {
             )}
 
             <div className="mt-4 border-t pt-3">
-              <p className="text-sm font-medium mb-2">এই নম্বরটি নতুন অর্ডার হিসেবে যোগ করুন</p>
-              <div className="grid sm:grid-cols-2 gap-2">
-                <Input
-                  placeholder="কাস্টমারের নাম *"
-                  value={quickForm.customer_name}
-                  onChange={(e) => setQuickForm({ ...quickForm, customer_name: e.target.value })}
-                />
-                <Input
-                  placeholder="ঠিকানা"
-                  value={quickForm.address}
-                  onChange={(e) => setQuickForm({ ...quickForm, address: e.target.value })}
-                />
-                <Input
-                  placeholder="পণ্য / ঔষধ"
-                  value={quickForm.items_text}
-                  onChange={(e) => setQuickForm({ ...quickForm, items_text: e.target.value })}
-                />
-                <Input
-                  type="number"
-                  placeholder="মোট টাকা"
-                  value={quickForm.total}
-                  onChange={(e) => setQuickForm({ ...quickForm, total: e.target.value })}
-                />
-              </div>
-              <Button className="mt-3" onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
+              <p className="text-sm text-muted-foreground mb-2">
+                শুধু এই নম্বরটি নতুন এন্ট্রি হিসেবে যোগ হবে — নাম/পণ্য/টাকা লাগবে না।
+              </p>
+              <Button onClick={addCheckedPhoneAsOrder} disabled={quickSaving}>
                 <Plus className="h-4 w-4 mr-1" />
-                {quickSaving ? "সেভ হচ্ছে…" : "নতুন অর্ডার হিসেবে যোগ করুন"}
+                {quickSaving ? "সেভ হচ্ছে…" : "এই নম্বরটি যোগ করুন"}
               </Button>
             </div>
+
           </div>
         )}
       </div>
