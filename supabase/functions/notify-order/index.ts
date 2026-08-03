@@ -124,7 +124,7 @@ async function buildHistoryBlock(phone: string, currentOrderId: string): Promise
   try {
     const [onlineRes, legacyRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/orders?select=order_id,created_at,total,items,status,phone&status=neq.cancelled&order=created_at.desc&limit=200`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/legacy_orders?select=order_date,created_at,total,items_text,phone_normalized&phone_normalized=eq.${encodeURIComponent(ph)}&order=order_date.desc&limit=200`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/legacy_orders?select=order_date,created_at,total,items_text,phone_normalized&phone_normalized=eq.${encodeURIComponent(ph)}&source=neq.online&order=order_date.desc&limit=200`, { headers }),
     ]);
 
     const onlineAll = onlineRes.ok ? await onlineRes.json() : [];
