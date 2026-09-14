@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SITE_URL = "https://bismillahhomeochamber.org";
+
 type EventBody = {
   eventName: "ViewContent" | "AddToCart" | "InitiateCheckout";
   eventId: string;
@@ -69,7 +71,11 @@ Deno.serve(async (req) => {
       event_time: Math.floor(Date.now() / 1000),
       event_id: body.eventId,
       action_source: "website",
-      event_source_url: body.eventSourceUrl,
+      event_source_url:
+        body.eventSourceUrl ||
+        req.headers.get("referer") ||
+        req.headers.get("origin") ||
+        SITE_URL,
       user_data,
       custom_data,
     };
