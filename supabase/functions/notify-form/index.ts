@@ -51,7 +51,7 @@ async function sendLeadCapi(params: {
     event_time: Math.floor(Date.now() / 1000),
     event_id: params.eventId,
     action_source: "website",
-    event_source_url: params.eventSourceUrl,
+    event_source_url: params.eventSourceUrl || "https://bismillahhomeochamber.org",
     user_data,
     custom_data: { content_name: params.contentName },
   };
@@ -133,7 +133,8 @@ Deno.serve(async (req) => {
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || undefined;
     const capiRes = await sendLeadCapi({
       eventId: capi?.event_id || `lead_${Date.now()}`,
-      eventSourceUrl: capi?.event_source_url,
+      eventSourceUrl:
+        capi?.event_source_url || req.headers.get("referer") || req.headers.get("origin") || undefined,
       userAgent: capi?.user_agent,
       clientIp,
       fbp: capi?.fbp,
