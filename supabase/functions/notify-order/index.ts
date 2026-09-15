@@ -322,6 +322,7 @@ Deno.serve(async (req) => {
         quantity: i.quantity,
         item_price: i.price,
       })),
+      testEventCode: testEventCode || Deno.env.get("META_TEST_EVENT_CODE") || undefined,
     });
 
     const whatsappUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(message)}`;
