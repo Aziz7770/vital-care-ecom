@@ -313,8 +313,8 @@ Deno.serve(async (req) => {
       value: total,
       currency: "BDT",
       orderId,
-      contents: items.map((i: { name: string; quantity: number; price: number }, idx: number) => ({
-        id: String(idx),
+      contents: items.map((i: { id?: string; name: string; quantity: number; price: number }, idx: number) => ({
+        id: i.id ? String(i.id) : String(idx),
         quantity: i.quantity,
         item_price: i.price,
       })),
