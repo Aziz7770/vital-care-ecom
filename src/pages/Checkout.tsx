@@ -108,6 +108,14 @@ const Checkout = () => {
     const purchaseEventId = orderId;
     const capiCtx = { ...getCapiContext(), event_id: purchaseEventId };
 
+    // Fire browser Pixel Purchase first so it is never lost if the network call is slow
+    trackCompletePayment(
+      orderId,
+      currentItems.map((i) => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
+      currentTotal + currentDelivery,
+      purchaseEventId,
+    );
+
     // Send notifications via edge function
     try {
       await supabase.functions.invoke('notify-order', {
@@ -120,6 +128,7 @@ const Checkout = () => {
           address: fullAddress,
           note: note || "",
           items: currentItems.map((item) => ({
+            id: item.product.id,
             name: item.product.name,
             quantity: item.quantity,
             price: item.product.price,
@@ -133,13 +142,6 @@ const Checkout = () => {
     } catch (notifyErr) {
       console.error("Notification error:", notifyErr);
     }
-
-    trackCompletePayment(
-      orderId,
-      currentItems.map((i) => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
-      currentTotal + currentDelivery,
-      purchaseEventId,
-    );
 
     markProductsAsOrdered(currentItems.map((i) => i.product.id));
     setSubmitted(true);
