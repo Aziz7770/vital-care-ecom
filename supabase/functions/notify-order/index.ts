@@ -86,7 +86,10 @@ async function sendMetaCapi(params: {
     const res = await fetch(`https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${TOKEN}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [event] }),
+      body: JSON.stringify({
+        data: [event],
+        ...(params.testEventCode ? { test_event_code: params.testEventCode } : {}),
+      }),
     });
     const json = await res.json();
     console.log("Meta CAPI:", res.ok ? "ok" : "fail", JSON.stringify(json));
