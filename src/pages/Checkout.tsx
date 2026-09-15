@@ -128,6 +128,7 @@ const Checkout = () => {
           address: fullAddress,
           note: note || "",
           items: currentItems.map((item) => ({
+            id: item.product.id,
             name: item.product.name,
             quantity: item.quantity,
             price: item.product.price,
