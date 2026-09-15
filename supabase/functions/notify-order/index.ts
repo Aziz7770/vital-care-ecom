@@ -37,6 +37,7 @@ async function sendMetaCapi(params: {
   currency?: string;
   contents?: { id: string; quantity: number; item_price: number }[];
   orderId?: string;
+  testEventCode?: string;
 }) {
   const PIXEL_ID = Deno.env.get("META_PIXEL_ID");
   const TOKEN = Deno.env.get("META_CONVERSIONS_API_TOKEN");
@@ -85,7 +86,10 @@ async function sendMetaCapi(params: {
     const res = await fetch(`https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${TOKEN}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [event] }),
+      body: JSON.stringify({
+        data: [event],
+        ...(params.testEventCode ? { test_event_code: params.testEventCode } : {}),
+      }),
     });
     const json = await res.json();
     console.log("Meta CAPI:", res.ok ? "ok" : "fail", JSON.stringify(json));
@@ -246,7 +250,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const {
       orderId, customerName, phone, email, district, address, note, items, subtotal, deliveryCharge, total,
-      capi,
+      capi, testEventCode,
     } = body;
 
     const historyBlock = await buildHistoryBlock(phone, orderId);
@@ -318,6 +322,7 @@ Deno.serve(async (req) => {
         quantity: i.quantity,
         item_price: i.price,
       })),
+      testEventCode: testEventCode || Deno.env.get("META_TEST_EVENT_CODE") || undefined,
     });
 
     const whatsappUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(message)}`;
