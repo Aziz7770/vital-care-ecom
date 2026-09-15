@@ -37,6 +37,7 @@ async function sendMetaCapi(params: {
   currency?: string;
   contents?: { id: string; quantity: number; item_price: number }[];
   orderId?: string;
+  testEventCode?: string;
 }) {
   const PIXEL_ID = Deno.env.get("META_PIXEL_ID");
   const TOKEN = Deno.env.get("META_CONVERSIONS_API_TOKEN");
