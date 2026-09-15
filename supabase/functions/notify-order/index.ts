@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const {
       orderId, customerName, phone, email, district, address, note, items, subtotal, deliveryCharge, total,
-      capi,
+      capi, testEventCode,
     } = body;
 
     const historyBlock = await buildHistoryBlock(phone, orderId);
