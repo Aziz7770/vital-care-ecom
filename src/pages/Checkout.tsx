@@ -143,13 +143,6 @@ const Checkout = () => {
       console.error("Notification error:", notifyErr);
     }
 
-    trackCompletePayment(
-      orderId,
-      currentItems.map((i) => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
-      currentTotal + currentDelivery,
-      purchaseEventId,
-    );
-
     markProductsAsOrdered(currentItems.map((i) => i.product.id));
     setSubmitted(true);
     clearCart();
