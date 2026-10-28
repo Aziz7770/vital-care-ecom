@@ -12,12 +12,27 @@ export const genEventId = (): string => {
   return `evt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 };
 
+// Remember TikTok ad click id (ttclid) from the landing URL for this visit
+export const getTtclid = (): string | undefined => {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("ttclid");
+    if (fromUrl) sessionStorage.setItem("ttclid", fromUrl);
+    return fromUrl || sessionStorage.getItem("ttclid") || undefined;
+  } catch {
+    return undefined;
+  }
+};
+if (typeof window !== "undefined") getTtclid();
+
 export const getCapiContext = () => ({
   event_id: genEventId(),
   event_source_url: typeof window !== "undefined" ? window.location.href : "",
   user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
   fbp: getCookie("_fbp"),
   fbc: getCookie("_fbc"),
+  ttp: getCookie("_ttp"),
+  ttclid: getTtclid(),
 });
 
 // Fire-and-forget server-side event via the meta-capi-event edge function.

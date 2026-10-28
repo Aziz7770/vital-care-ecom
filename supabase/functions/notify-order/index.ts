@@ -20,6 +20,58 @@ function normalizePhone(p: string): string {
   return digits;
 }
 
+async function sha256Hex(v: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sendTikTokEvent(p: {
+  eventId: string; url: string; userAgent?: string; ip?: string; ttp?: string; ttclid?: string;
+  phone?: string; email?: string; value: number; orderId: string;
+  contents: { content_id: string; content_name: string; quantity: number; price: number }[];
+  testEventCode?: string;
+}) {
+  const PIXEL = Deno.env.get("TIKTOK_PIXEL_ID");
+  const TOKEN = Deno.env.get("TIKTOK_EVENTS_API_TOKEN");
+  if (!PIXEL || !TOKEN) return { ok: false, error: "not_configured" };
+  try {
+    const user: Record<string, unknown> = {};
+    if (p.phone) {
+      let d = p.phone.replace(/\D/g, "");
+      if (d.startsWith("0")) d = "88" + d;
+      user.phone = await sha256Hex("+" + d);
+    }
+    if (p.email) user.email = await sha256Hex(p.email.trim().toLowerCase());
+    if (p.ip) user.ip = p.ip;
+    if (p.userAgent) user.user_agent = p.userAgent;
+    if (p.ttp) user.ttp = p.ttp;
+    if (p.ttclid) user.ttclid = p.ttclid;
+    const payload: Record<string, unknown> = {
+      event_source: "web",
+      event_source_id: PIXEL,
+      data: [{
+        event: "CompletePayment",
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: p.eventId,
+        user,
+        page: { url: p.url },
+        properties: { currency: "BDT", value: p.value, order_id: p.orderId, content_type: "product", contents: p.contents },
+      }],
+    };
+    if (p.testEventCode) payload.test_event_code = p.testEventCode;
+    const res = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Access-Token": TOKEN },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.code !== 0) console.error("TikTok Events API failed", res.status, JSON.stringify(json));
+    return { ok: res.ok && json.code === 0, status: res.status, data: json };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 async function sendMetaCapi(params: {
   eventName: string;
   eventId: string;
@@ -323,6 +375,27 @@ Deno.serve(async (req) => {
         item_price: i.price,
       })),
       testEventCode: testEventCode || Deno.env.get("META_TEST_EVENT_CODE") || undefined,
+    });
+
+    // TikTok Events API — CompletePayment (deduplicated with browser pixel via event_id)
+    results.tiktok = await sendTikTokEvent({
+      eventId: capi?.event_id || orderId,
+      url: capi?.event_source_url || req.headers.get("referer") || "https://bismillahhomeochamber.org/checkout",
+      userAgent: capi?.user_agent,
+      ip: clientIp,
+      ttp: capi?.ttp,
+      ttclid: capi?.ttclid,
+      phone,
+      email,
+      value: total,
+      orderId,
+      contents: items.map((i: { id?: string; name: string; quantity: number; price: number }, idx: number) => ({
+        content_id: i.id ? String(i.id) : String(idx),
+        content_name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+      })),
+      testEventCode: body.tiktokTestEventCode || Deno.env.get("TIKTOK_TEST_EVENT_CODE") || undefined,
     });
 
     const whatsappUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(message)}`;

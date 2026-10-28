@@ -3,7 +3,7 @@
 declare global {
   interface Window {
     ttq?: {
-      track: (event: string, params?: Record<string, unknown>) => void;
+      track: (event: string, params?: Record<string, unknown>, opts?: Record<string, unknown>) => void;
       page: () => void;
     };
     fbq?: (...args: unknown[]) => void;
@@ -98,7 +98,7 @@ export const trackCompletePayment = (
     value: total,
     currency: "BDT",
     order_id: orderId,
-  });
+  }, eventId ? { event_id: eventId } : undefined);
   window.fbq?.(
     "track",
     "Purchase",
