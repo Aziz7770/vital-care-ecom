@@ -59,14 +59,38 @@ async function sendTikTokEvent(p: {
       }],
     };
     if (p.testEventCode) payload.test_event_code = p.testEventCode;
-    const res = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Access-Token": TOKEN },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.code !== 0) console.error("TikTok Events API failed", res.status, JSON.stringify(json));
-    return { ok: res.ok && json.code === 0, status: res.status, data: json };
+    // TikTok's edge firewall occasionally returns an empty 403/5xx for a request;
+    // retry a few times with backoff so the CompletePayment is not lost.
+    let last: { ok: boolean; status: number; data: unknown; attempts: number } = { ok: false, status: 0, data: null, attempts: 0 };
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        const res = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "BismillahHomeoChamber-Server/1.0",
+            "Access-Token": TOKEN.trim(),
+          },
+          body: JSON.stringify(payload),
+        });
+        const text = await res.text();
+        let json: { code?: number } = {};
+        try { json = JSON.parse(text); } catch { /* non-JSON (firewall) response */ }
+        last = { ok: res.ok && json.code === 0, status: res.status, data: json.code !== undefined ? json : text.slice(0, 200), attempts: attempt };
+        if (last.ok) break;
+        // Stop retrying on a real API error (bad token, bad payload) — only retry blocked/transient responses
+        if (json.code !== undefined && res.status < 500) break;
+        console.error(`TikTok Events API attempt ${attempt} failed`, res.status, text.slice(0, 200));
+      } catch (e) {
+        last = { ok: false, status: 0, data: String(e), attempts: attempt };
+        console.error(`TikTok Events API attempt ${attempt} error`, String(e));
+      }
+      await new Promise((r) => setTimeout(r, 400 * attempt));
+    }
+    if (!last.ok) console.error("TikTok Events API failed after retries", JSON.stringify(last));
+    else if (last.attempts > 1) console.log("TikTok Events API ok after", last.attempts, "attempts");
+    return last;
   } catch (e) {
     return { ok: false, error: String(e) };
   }
