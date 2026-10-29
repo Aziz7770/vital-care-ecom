@@ -69,7 +69,7 @@ const Consultation = () => {
 
           <div className="mt-6 space-y-4">
             {[
-              { icon: Phone, title: "ফোনে পরামর্শ", desc: "০১৭৬৭৬৭৮৫৬২ নম্বরে কল করুন" },
+              { icon: Phone, title: "ফোনে পরামর্শ", desc: "০১৩৫৪৪৫২১০৮ নম্বরে কল করুন" },
               { icon: MessageCircle, title: "WhatsApp পরামর্শ", desc: "WhatsApp-এ মেসেজ পাঠান" },
               { icon: Clock, title: "সময়সূচী", desc: "সকাল ১০টা - রাত ১০টা (প্রতিদিন)" },
             ].map((item) => (

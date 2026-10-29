@@ -94,7 +94,7 @@ add_action('save_post_product', 'bismillah_save_price_meta');
 
 // WhatsApp order link helper
 function bismillah_whatsapp_link($product_name = '', $price = '') {
-    $phone = '8801767678562';
+    $phone = '8801354452108';
     $message = "আসসালামু আলাইকুম, আমি {$product_name} (৳{$price}) অর্ডার করতে চাই।";
     return "https://wa.me/{$phone}?text=" . urlencode($message);
 }

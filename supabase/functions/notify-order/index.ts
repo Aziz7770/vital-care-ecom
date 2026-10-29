@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const OWNER_WHATSAPP = "8801767678562";
+const OWNER_WHATSAPP = "8801354452108";
 
 async function sha256(input: string): Promise<string> {
   const data = new TextEncoder().encode(input.trim().toLowerCase());

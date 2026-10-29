@@ -22,7 +22,7 @@
             <!-- Contact -->
             <div>
                 <h4>যোগাযোগ</h4>
-                <p>📞 <a href="tel:01767678562">০১৭৬৭৬৭৮৫৬২</a></p>
+                <p>📞 <a href="tel:01354452108">০১৩৫৪৪৫২১০৮</a></p>
                 <p>✉️ <a href="mailto:bismillahhomeochamber@gmail.com">bismillahhomeochamber@gmail.com</a></p>
                 <p>📍 গোপালগঞ্জ, কাশিয়ানী উপজেলা কেন্দ্রীয় জামে মসজিদ সংলগ্ন</p>
             </div>
@@ -34,7 +34,7 @@
 </footer>
 
 <!-- WhatsApp Float Button -->
-<a href="https://wa.me/8801767678562" target="_blank" class="whatsapp-float" title="WhatsApp এ মেসেজ করুন">
+<a href="https://wa.me/8801354452108" target="_blank" class="whatsapp-float" title="WhatsApp এ মেসেজ করুন">
     💬
 </a>
 
