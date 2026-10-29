@@ -78,7 +78,7 @@ const ProductLanding = () => {
   );
   const displayTestimonials = relatedTestimonials.length > 0 ? relatedTestimonials : testimonials.slice(0, 3);
 
-  const whatsappNumber = "8801767678562";
+  const whatsappNumber = "8801354452108";
   const whatsappMessage = encodeURIComponent(`আমি ${product.name} সম্পর্কে জানতে চাই।`);
 
   const problemPoints = product.problem.split("?").filter(Boolean).map(s => s.trim() + "?");

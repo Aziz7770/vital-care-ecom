@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 
-const OWNER_WHATSAPP = "8801767678562";
+const OWNER_WHATSAPP = "8801354452108";
 
 const BD_DISTRICTS = [
   "ঢাকা","চট্টগ্রাম","গাজীপুর","নারায়ণগঞ্জ","কুমিল্লা","সিলেট","রাজশাহী","খুলনা","বরিশাল","রংপুর","ময়মনসিংহ",

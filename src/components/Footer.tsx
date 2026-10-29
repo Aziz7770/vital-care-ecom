@@ -20,7 +20,7 @@ const Footer = () => (
         <div>
           <h3 className="mb-4 text-sm font-semibold text-foreground">যোগাযোগ</h3>
           <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-            <a href="tel:01767678562" className="flex items-center gap-2 hover:text-primary"><Phone className="h-4 w-4 text-primary" /> ০১৭৬৭৬৭৮৫৬২</a>
+            <a href="tel:01354452108" className="flex items-center gap-2 hover:text-primary"><Phone className="h-4 w-4 text-primary" /> ০১৩৫৪৪৫২১০৮</a>
             <a href="mailto:bismillahhomeochamber@gmail.com" className="flex items-center gap-2 hover:text-primary"><Mail className="h-4 w-4 text-primary" /> bismillahhomeochamber@gmail.com</a>
             <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> গোপালগঞ্জ, কাশিয়ানী উপজেলা কেন্দ্রীয় জামে মসজিদ সংলগ্ন</span>
           </div>

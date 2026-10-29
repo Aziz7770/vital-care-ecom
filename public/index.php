@@ -119,7 +119,7 @@
             <li>✓ সম্পূর্ণ বিনামূল্যে</li>
         </ul>
         <div style="margin-top:2rem;">
-            <a href="https://wa.me/8801767678562?text=আসসালামু আলাইকুম, আমি ডাক্তারের পরামর্শ নিতে চাই।" target="_blank" class="btn btn-primary">পরামর্শ নিন</a>
+            <a href="https://wa.me/8801354452108?text=আসসালামু আলাইকুম, আমি ডাক্তারের পরামর্শ নিতে চাই।" target="_blank" class="btn btn-primary">পরামর্শ নিন</a>
         </div>
     </div>
 </section>
@@ -131,7 +131,7 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.5rem;margin-top:2rem;">
             <div class="about-card">
                 <h4>📞 ফোন</h4>
-                <p><a href="tel:01767678562">০১৭৬৭৬৭৮৫৬২</a></p>
+                <p><a href="tel:01354452108">০১৩৫৪৪৫২১০৮</a></p>
             </div>
             <div class="about-card">
                 <h4>✉️ ইমেইল</h4>

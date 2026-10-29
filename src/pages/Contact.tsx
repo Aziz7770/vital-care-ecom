@@ -51,14 +51,14 @@ const Contact = () => {
     <div className="container py-8">
       <SEO
         title="যোগাযোগ করুন"
-        description="বিসমিল্লাহ হোমিও চেম্বারে যোগাযোগ করুন। ফোন: ০১৭৬৭৬৭৮৫৬২। ঠিকানা: গোপালগঞ্জ, কাশিয়ানী। দিবা রাত্রি সেবা চালু।"
+        description="বিসমিল্লাহ হোমিও চেম্বারে যোগাযোগ করুন। ফোন: ০১৩৫৪৪৫২১০৮। ঠিকানা: গোপালগঞ্জ, কাশিয়ানী। দিবা রাত্রি সেবা চালু।"
         canonical={`${SITE_URL}/contact`}
       />
       <h1 className="text-2xl font-bold text-foreground md:text-3xl">যোগাযোগ করুন</h1>
       <div className="mt-8 grid gap-8 md:grid-cols-2">
         <div className="space-y-4">
           {[
-            { icon: Phone, title: "ফোন", desc: "০১৭৬৭৬৭৮৫৬২" },
+            { icon: Phone, title: "ফোন", desc: "০১৩৫৪৪৫২১০৮" },
             { icon: Mail, title: "ইমেইল", desc: "bismillahhomeochamber@gmail.com" },
             { icon: MapPin, title: "ঠিকানা", desc: "গোপালগঞ্জ, কাশিয়ানী উপজেলা কেন্দ্রীয় জামে মসজিদ সংলগ্ন" },
             { icon: Clock, title: "সময়সূচী", desc: "দিবা রাত্রি সেবা চালু" },

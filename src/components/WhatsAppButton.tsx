@@ -2,7 +2,7 @@ import whatsappLogo from "@/assets/whatsapp-logo.png";
 import { trackContact } from "@/lib/tracking";
 
 const WhatsAppButton = () => {
-  const phoneNumber = "8801767678562";
+  const phoneNumber = "8801354452108";
   const message = encodeURIComponent("আসসালামু আলাইকুম, আমি আপনাদের ওয়েবসাইট থেকে জানতে চাই...");
 
   return (
