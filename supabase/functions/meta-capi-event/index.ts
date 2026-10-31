@@ -23,6 +23,14 @@ type EventBody = {
   contentCategory?: string;
 };
 
+function isOwnerSite(url?: string | null): boolean {
+  if (!url) return true;
+  try {
+    const h = new URL(url).hostname;
+    return h === "bismillahhomeochamber.org" || h === "www.bismillahhomeochamber.org";
+  } catch { return false; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -40,6 +48,12 @@ Deno.serve(async (req) => {
     if (!body?.eventName || !body?.eventId) {
       return new Response(JSON.stringify({ success: false, error: "invalid_payload" }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,
+      });
+    }
+
+    if (!isOwnerSite(body.eventSourceUrl || req.headers.get("referer") || req.headers.get("origin"))) {
+      return new Response(JSON.stringify({ success: true, skipped: "non_owner_domain" }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200,
       });
     }
 
