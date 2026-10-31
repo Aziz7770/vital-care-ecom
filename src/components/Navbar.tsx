@@ -4,18 +4,21 @@ import { ShoppingCart, Menu, X, Phone } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.jpg";
+import { LANDING_ONLY } from "@/config/siteMode";
 
 const Navbar = () => {
   const { totalItems } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navLinks = [
-    { to: "/", label: "হোম" },
-    { to: "/products", label: "সকল ঔষধ" },
-    { to: "/consultation", label: "ডাক্তার পরামর্শ" },
-    { to: "/about", label: "আমাদের সম্পর্কে" },
-    { to: "/contact", label: "যোগাযোগ" },
-  ];
+  const navLinks = LANDING_ONLY
+    ? []
+    : [
+        { to: "/", label: "হোম" },
+        { to: "/products", label: "সকল ঔষধ" },
+        { to: "/consultation", label: "ডাক্তার পরামর্শ" },
+        { to: "/about", label: "আমাদের সম্পর্কে" },
+        { to: "/contact", label: "যোগাযোগ" },
+      ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -58,9 +61,11 @@ const Navbar = () => {
               </Badge>
             )}
           </Link>
-          <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          {!LANDING_ONLY && (
+            <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          )}
         </div>
       </div>
 

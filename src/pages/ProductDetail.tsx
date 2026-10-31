@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { LANDING_ONLY } from "@/config/siteMode";
 import { ShoppingCart, Star, ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -94,9 +95,11 @@ const ProductDetail = () => {
           },
         }}
       />
-      <Link to="/products" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-        <ArrowLeft className="h-4 w-4" /> সকল ঔষধ
-      </Link>
+      {!LANDING_ONLY && (
+        <Link to="/products" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <ArrowLeft className="h-4 w-4" /> সকল ঔষধ
+        </Link>
+      )}
 
       <div className="mt-6 grid gap-8 md:grid-cols-2">
         {/* Image */}

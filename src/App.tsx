@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { LANDING_ONLY, LANDING_PATH, LANDING_SLUG } from "@/config/siteMode";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,6 +36,13 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
+// In landing-only mode, only the landing slug renders; any other slug goes back to it
+const LandingOnlySlug = () => {
+  const { slug } = useParams();
+  if (slug !== LANDING_SLUG) return <Navigate to={LANDING_PATH} replace />;
+  return <MainLayout><SlugRouter /></MainLayout>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -43,6 +51,22 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          {LANDING_ONLY ? (
+          <Routes>
+            {/* Landing-only mode: only the offer page + ordering flow are public */}
+            <Route path="/" element={<Navigate to={LANDING_PATH} replace />} />
+            <Route path="/:slug" element={<LandingOnlySlug />} />
+            <Route path="/cart" element={<MainLayout><Cart /></MainLayout>} />
+            <Route path="/checkout" element={<MainLayout><Checkout /></MainLayout>} />
+            <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
+            <Route path="/terms" element={<MainLayout><Terms /></MainLayout>} />
+            <Route path="/return-policy" element={<MainLayout><ReturnPolicy /></MainLayout>} />
+            <Route path="/auth" element={<MainLayout><Auth /></MainLayout>} />
+            <Route path="/admin/orders" element={<MainLayout><AdminOrders /></MainLayout>} />
+            <Route path="/admin/customers" element={<MainLayout><AdminCustomers /></MainLayout>} />
+            <Route path="*" element={<Navigate to={LANDING_PATH} replace />} />
+          </Routes>
+          ) : (
           <Routes>
             {/* Main pages with navbar & footer */}
             <Route path="/" element={<MainLayout><Index /></MainLayout>} />
@@ -64,6 +88,7 @@ const App = () => (
             {/* Short URL: /:slug → product landing (standalone) or 404 */}
             <Route path="/:slug" element={<MainLayout><SlugRouter /></MainLayout>} />
           </Routes>
+          )}
         </BrowserRouter>
         </OrderProvider>
       </CartProvider>
