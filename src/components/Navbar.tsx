@@ -53,14 +53,16 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link to="/cart" className="relative">
-            <ShoppingCart className="h-6 w-6 text-foreground" />
-            {totalItems > 0 && (
-              <Badge className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] text-primary-foreground">
-                {totalItems}
-              </Badge>
-            )}
-          </Link>
+          {!LANDING_ONLY && (
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="h-6 w-6 text-foreground" />
+              {totalItems > 0 && (
+                <Badge className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] text-primary-foreground">
+                  {totalItems}
+                </Badge>
+              )}
+            </Link>
+          )}
           {!LANDING_ONLY && (
             <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
