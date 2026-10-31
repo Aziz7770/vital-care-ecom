@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { LANDING_ONLY, LANDING_PATH, LANDING_SLUG } from "@/config/siteMode";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { LANDING_ONLY, LANDING_SLUG } from "@/config/siteMode";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,13 +36,6 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
-// In landing-only mode, only the landing slug renders; any other slug goes back to it
-const LandingOnlySlug = () => {
-  const { slug } = useParams();
-  if (slug !== LANDING_SLUG) return <Navigate to={LANDING_PATH} replace />;
-  return <MainLayout><SlugRouter /></MainLayout>;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -54,8 +47,7 @@ const App = () => (
           {LANDING_ONLY ? (
           <Routes>
             {/* Landing-only mode: only the offer page + ordering flow are public */}
-            <Route path="/" element={<Navigate to={LANDING_PATH} replace />} />
-            <Route path="/:slug" element={<LandingOnlySlug />} />
+            <Route path="/" element={<MainLayout><ProductDetail slugOverride={LANDING_SLUG} /></MainLayout>} />
             <Route path="/cart" element={<MainLayout><Cart /></MainLayout>} />
             <Route path="/checkout" element={<MainLayout><Checkout /></MainLayout>} />
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
@@ -64,7 +56,7 @@ const App = () => (
             <Route path="/auth" element={<MainLayout><Auth /></MainLayout>} />
             <Route path="/admin/orders" element={<MainLayout><AdminOrders /></MainLayout>} />
             <Route path="/admin/customers" element={<MainLayout><AdminCustomers /></MainLayout>} />
-            <Route path="*" element={<Navigate to={LANDING_PATH} replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           ) : (
           <Routes>
