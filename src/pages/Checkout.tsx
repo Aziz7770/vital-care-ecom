@@ -180,7 +180,7 @@ const Checkout = () => {
               <div><Label htmlFor="name">আপনার নাম *</Label><Input id="name" name="name" required placeholder="পূর্ণ নাম" /></div>
               <div><Label htmlFor="phone">মোবাইল নম্বর *</Label><Input id="phone" name="phone" required placeholder="০১XXXXXXXXX" type="tel" /></div>
             </div>
-            <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="district">জেলা *</Label>
                 <select
