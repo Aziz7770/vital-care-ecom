@@ -11,23 +11,17 @@ import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
+import { BD_LOCATIONS, BD_DISTRICTS, OTHER_THANA } from "@/data/bdLocations";
 
 const OWNER_WHATSAPP = "8801354452108";
 
-const BD_DISTRICTS = [
-  "ঢাকা","চট্টগ্রাম","গাজীপুর","নারায়ণগঞ্জ","কুমিল্লা","সিলেট","রাজশাহী","খুলনা","বরিশাল","রংপুর","ময়মনসিংহ",
-  "গোপালগঞ্জ","ফরিদপুর","মাদারীপুর","শরীয়তপুর","কিশোরগঞ্জ","টাঙ্গাইল","মানিকগঞ্জ","মুন্সিগঞ্জ","নরসিংদী","নারসিংদী",
-  "যশোর","সাতক্ষীরা","বাগেরহাট","কুষ্টিয়া","মাগুরা","নড়াইল","ঝিনাইদহ","চুয়াডাঙ্গা","মেহেরপুর",
-  "বগুড়া","পাবনা","সিরাজগঞ্জ","জয়পুরহাট","নওগাঁ","নাটোর","চাঁপাইনবাবগঞ্জ",
-  "দিনাজপুর","পঞ্চগড়","ঠাকুরগাঁও","নীলফামারী","লালমনিরহাট","কুড়িগ্রাম","গাইবান্ধা",
-  "মৌলভীবাজার","হবিগঞ্জ","সুনামগঞ্জ","ব্রাহ্মণবাড়িয়া","চাঁদপুর","লক্ষ্মীপুর","নোয়াখালী","ফেনী","কক্সবাজার","বান্দরবান","রাঙামাটি","খাগড়াছড়ি",
-  "পটুয়াখালী","ভোলা","পিরোজপুর","বরগুনা","ঝালকাঠি",
-  "জামালপুর","শেরপুর","নেত্রকোনা","অন্যান্য",
-];
 
 const Checkout = () => {
   const { items, totalPrice, clearCart, markProductsAsOrdered } = useCart();
   const navigate = useNavigate();
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedThana, setSelectedThana] = useState("");
+  const thanaOptions = selectedDistrict ? [...(BD_LOCATIONS[selectedDistrict] || []), OTHER_THANA] : [];
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const orderItemsRef = useRef(items);
@@ -71,7 +65,9 @@ const Checkout = () => {
     const district = ((formData.get("district") as string) || "").trim();
     const address = formData.get("address") as string;
     const note = formData.get("note") as string;
-    const fullAddress = district ? `${address} (জেলা: ${district})` : address;
+    const thana = ((formData.get("thana") as string) || "").trim();
+    const locationParts = [thana && `থানা: ${thana}`, district && `জেলা: ${district}`].filter(Boolean).join(", ");
+    const fullAddress = locationParts ? `${address} (${locationParts})` : address;
 
     // Build WhatsApp message with order details
     const currentItems = orderItemsRef.current;
@@ -191,15 +187,31 @@ const Checkout = () => {
                   id="district"
                   name="district"
                   required
-                  defaultValue=""
+                  value={selectedDistrict}
+                  onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedThana(""); }}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="" disabled>জেলা নির্বাচন করুন</option>
                   {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
+              <div>
+                <Label htmlFor="thana">থানা / উপজেলা *</Label>
+                <select
+                  id="thana"
+                  name="thana"
+                  required
+                  disabled={!selectedDistrict}
+                  value={selectedThana}
+                  onChange={(e) => setSelectedThana(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>{selectedDistrict ? "থানা নির্বাচন করুন" : "আগে জেলা নির্বাচন করুন"}</option>
+                  {thanaOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
             </div>
-            <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" name="address" required placeholder="বাসা/ফ্ল্যাট নং, রোড, এলাকা, থানা" /></div>
+            <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" name="address" required placeholder="বাসা/ফ্ল্যাট নং, রোড, গ্রাম/এলাকা" /></div>
             <div><Label htmlFor="note">বিশেষ নোট (ঐচ্ছিক)</Label><Input id="note" name="note" placeholder="যেকোনো বিশেষ নির্দেশনা" /></div>
           </div>
 
