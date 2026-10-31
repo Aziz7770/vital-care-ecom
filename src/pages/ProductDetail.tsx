@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { LANDING_ONLY } from "@/config/siteMode";
 import { ShoppingCart, Star, ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
