@@ -11,8 +11,9 @@ import { trackViewContent, trackAddToCart } from "@/lib/tracking";
 import { sendServerEvent, genEventId } from "@/lib/capi";
 import { Truck, ShieldCheck, PackageCheck } from "lucide-react";
 
-const ProductDetail = () => {
-  const { slug } = useParams();
+const ProductDetail = ({ slugOverride }: { slugOverride?: string } = {}) => {
+  const params = useParams();
+  const slug = slugOverride ?? params.slug;
   const { addToCart, isOrdered } = useCart();
   const navigate = useNavigate();
   const product = products.find((p) => p.slug === slug);
@@ -71,7 +72,7 @@ const ProductDetail = () => {
       <SEO
         title={`${product.name} (${product.nameEn}) - কিনুন`}
         description={`${product.name} - ${product.description.slice(0, 120)}। মূল্য: ৳${product.price}। ১০০% আসল হোমিওপ্যাথিক ঔষধ।`}
-        canonical={`${SITE_URL}/${product.slug}`}
+        canonical={slugOverride ? `${SITE_URL}/` : `${SITE_URL}/${product.slug}`}
         ogImage={product.image}
         ogType="product"
         jsonLd={{
