@@ -94,9 +94,11 @@ const ProductDetail = () => {
           },
         }}
       />
-      <Link to="/products" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-        <ArrowLeft className="h-4 w-4" /> সকল ঔষধ
-      </Link>
+      {!LANDING_ONLY && (
+        <Link to="/products" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <ArrowLeft className="h-4 w-4" /> সকল ঔষধ
+        </Link>
+      )}
 
       <div className="mt-6 grid gap-8 md:grid-cols-2">
         {/* Image */}
