@@ -17,6 +17,14 @@ function normalizePhone(p: string): string {
   return digits;
 }
 
+function isOwnerSite(url?: string | null): boolean {
+  if (!url) return true;
+  try {
+    const h = new URL(url).hostname;
+    return h === "bismillahhomeochamber.org" || h === "www.bismillahhomeochamber.org";
+  } catch { return false; }
+}
+
 async function sendLeadCapi(params: {
   eventId: string;
   eventSourceUrl?: string;
@@ -131,7 +139,8 @@ Deno.serve(async (req) => {
 
     // Meta CAPI — Lead
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || undefined;
-    const capiRes = await sendLeadCapi({
+    const srcUrl = capi?.event_source_url || req.headers.get("referer") || req.headers.get("origin");
+    const capiRes = !isOwnerSite(srcUrl) ? { skipped: "non_owner_domain" } : await sendLeadCapi({
       eventId: capi?.event_id || `lead_${Date.now()}`,
       eventSourceUrl:
         capi?.event_source_url || req.headers.get("referer") || req.headers.get("origin") || undefined,

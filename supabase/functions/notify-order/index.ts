@@ -25,6 +25,14 @@ async function sha256Hex(v: string) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function isOwnerSite(url?: string | null): boolean {
+  if (!url) return true;
+  try {
+    const h = new URL(url).hostname;
+    return h === "bismillahhomeochamber.org" || h === "www.bismillahhomeochamber.org";
+  } catch { return false; }
+}
+
 async function sendTikTokEvent(p: {
   eventId: string; url: string; userAgent?: string; ip?: string; ttp?: string; ttclid?: string;
   phone?: string; email?: string; value: number; orderId: string;
@@ -376,7 +384,9 @@ Deno.serve(async (req) => {
 
     // Meta Conversions API — Purchase
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || undefined;
-    results.capi = await sendMetaCapi({
+    const srcUrl = capi?.event_source_url || req.headers.get("referer") || req.headers.get("origin");
+    const ownerSite = isOwnerSite(srcUrl);
+    results.capi = !ownerSite ? { skipped: "non_owner_domain" } : await sendMetaCapi({
       eventName: "Purchase",
       eventId: capi?.event_id || orderId,
       eventSourceUrl:
@@ -402,7 +412,7 @@ Deno.serve(async (req) => {
     });
 
     // TikTok Events API — CompletePayment (deduplicated with browser pixel via event_id)
-    results.tiktok = await sendTikTokEvent({
+    results.tiktok = !ownerSite ? { skipped: "non_owner_domain" } : await sendTikTokEvent({
       eventId: capi?.event_id || orderId,
       url: capi?.event_source_url || req.headers.get("referer") || "https://bismillahhomeochamber.org/checkout",
       userAgent: capi?.user_agent,
