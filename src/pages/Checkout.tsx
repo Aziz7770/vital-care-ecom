@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { CheckCircle } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 import { BD_LOCATIONS, BD_DISTRICTS, OTHER_THANA } from "@/data/bdLocations";
@@ -115,6 +116,9 @@ const Checkout = () => {
     // Send notifications via edge function
     try {
       await supabase.functions.invoke('notify-order', {
+        // Pin to Singapore: Bangladesh visitors otherwise route to India (ap-south-1),
+        // where TikTok's Events API rejects every call ("banned Country list").
+        region: FunctionRegion.ApSoutheast1,
         body: {
           orderId,
           customerName: name,
