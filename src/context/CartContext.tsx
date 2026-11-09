@@ -25,26 +25,21 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [orderedProductIds, setOrderedProductIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(ORDERED_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Repeat orders are always allowed: never lock products after ordering.
+  const [orderedProductIds, setOrderedProductIds] = useState<string[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(ORDERED_KEY, JSON.stringify(orderedProductIds));
-  }, [orderedProductIds]);
+    try { localStorage.removeItem(ORDERED_KEY); } catch { /* ignore */ }
+  }, []);
 
   const markProductsAsOrdered = useCallback((productIds: string[]) => {
-    setOrderedProductIds((prev) => [...new Set([...prev, ...productIds])]);
+    void productIds;
   }, []);
 
   const isOrdered = useCallback((productId: string) => {
-    return orderedProductIds.includes(productId);
-  }, [orderedProductIds]);
+    void productId;
+    return false;
+  }, []);
 
   const addToCart = useCallback((product: Product) => {
     setItems((prev) => {
