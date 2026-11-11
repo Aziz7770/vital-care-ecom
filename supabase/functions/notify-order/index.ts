@@ -339,7 +339,11 @@ Deno.serve(async (req) => {
 
     const historyBlock = await buildHistoryBlock(phone, orderId);
 
-    let message = `🛒 *নতুন অর্ডার!*\n\n`;
+    const safeTestCode = typeof testEventCode === "string" && /^TEST[A-Z0-9]{3,20}$/i.test(testEventCode) ? testEventCode : undefined;
+    const orderTime = new Date().toLocaleString("en-GB", { timeZone: "Asia/Dhaka", hour12: true });
+    let message = safeTestCode
+      ? `🧪 *টেস্ট অর্ডার (Facebook Test Events: ${safeTestCode})*\n🕒 *সময়:* ${orderTime}\n\n`
+      : `🛒 *নতুন অর্ডার!*\n🕒 *সময়:* ${orderTime}\n\n`;
     message += `🆔 *অর্ডার:* ${orderId}\n`;
     message += `👤 *নাম:* ${customerName}\n`;
     message += `📞 *ফোন:* ${phone}\n`;
@@ -408,7 +412,7 @@ Deno.serve(async (req) => {
         quantity: i.quantity,
         item_price: i.price,
       })),
-      testEventCode: testEventCode || Deno.env.get("META_TEST_EVENT_CODE") || undefined,
+      testEventCode: safeTestCode || Deno.env.get("META_TEST_EVENT_CODE") || undefined,
     });
 
     // TikTok Events API — CompletePayment (deduplicated with browser pixel via event_id)
