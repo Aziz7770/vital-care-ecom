@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FunctionRegion } from "@supabase/supabase-js";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
 import { setMetaCustomer } from "@/lib/metaPrivacy";
+import { getMetaTestCode } from "@/lib/metaTestCode";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 import { BD_LOCATIONS, BD_DISTRICTS, OTHER_THANA } from "@/data/bdLocations";
 
@@ -141,6 +142,7 @@ const Checkout = () => {
           deliveryCharge: currentDelivery,
           total: currentTotal + currentDelivery,
           capi: capiCtx,
+          testEventCode: getMetaTestCode(),
         },
       });
     } catch (notifyErr) {
