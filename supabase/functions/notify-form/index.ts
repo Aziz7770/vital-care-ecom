@@ -1,4 +1,4 @@
-import { META_NEUTRAL_SOURCE_URL } from "../_shared/metaSafe.ts";
+import { META_NEUTRAL_SOURCE_URL, isLegacyMetaEnabled } from "../_shared/metaSafe.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -38,6 +38,7 @@ async function sendLeadCapi(params: {
   email?: string;
   contentName: string;
 }) {
+  if (!isLegacyMetaEnabled()) return { skipped: "legacy_meta_disabled" };
   const PIXEL_ID = Deno.env.get("META_PIXEL_ID");
   const TOKEN = Deno.env.get("META_CONVERSIONS_API_TOKEN");
   if (!PIXEL_ID || !TOKEN) return { ok: false, error: "not_configured" };

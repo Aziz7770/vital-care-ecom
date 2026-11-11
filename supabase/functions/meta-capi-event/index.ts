@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL } from "../_shared/metaSafe.ts";
+import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL, isLegacyMetaEnabled } from "../_shared/metaSafe.ts";
 
 type EventBody = {
   eventName: "PageView" | "ViewContent" | "AddToCart" | "InitiateCheckout";
@@ -33,6 +33,10 @@ function isOwnerSite(url?: string | null): boolean {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!isLegacyMetaEnabled()) return new Response(JSON.stringify({ success: true, skipped: "legacy_meta_disabled" }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200,
+  });
 
   try {
     const body = (await req.json()) as EventBody;

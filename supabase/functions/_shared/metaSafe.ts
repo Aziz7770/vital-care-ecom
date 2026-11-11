@@ -5,6 +5,9 @@
 
 export const META_NEUTRAL_SOURCE_URL = "https://bismillahhomeochamber.org/";
 
+// Retired app-owned integration: fail closed even if old credentials remain.
+export const isLegacyMetaEnabled = (): boolean => false;
+
 export type MetaSafeInput = {
   value?: number;
   currency?: string;
