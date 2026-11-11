@@ -9,9 +9,22 @@ export const META_NEUTRAL_SOURCE_URL = "https://bismillahhomeochamber.org/";
 export const isLegacyMetaEnabled = (): boolean => false;
 
 // Current browser-only Pixel (loaded from index.html on the owner domain).
-// Server events stay off until a Conversions API token for this Pixel is added.
 export const META_PIXEL_ID = "1006266925864656";
 export const isMetaBrowserPixelEnabled = (): boolean => true;
+
+// Conversions API for the current Pixel: server-side Purchase only (from notify-order),
+// deduplicated with the browser Purchase via event_id = order ID.
+export const META_CAPI_TOKEN_ENV = "META_CAPI_TOKEN";
+export const isMetaServerPurchaseEnabled = (): boolean => true;
+
+/** Same hosts as window.__TRACK_OK in index.html: owner domain + Lovable preview/published links. */
+export function isMetaTrackedSite(url?: string | null): boolean {
+  if (!url) return false;
+  try {
+    const h = new URL(url).hostname;
+    return /^((www\.)?bismillahhomeochamber\.org|[a-z0-9-]+\.lovable\.app|[a-z0-9-]+\.lovableproject\.com)$/.test(h);
+  } catch { return false; }
+}
 
 export type MetaSafeInput = {
   value?: number;

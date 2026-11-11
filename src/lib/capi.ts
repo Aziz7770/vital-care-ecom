@@ -59,8 +59,9 @@ export const getCapiContext = () => ({
   // it is never forwarded to Meta (Meta receives the neutral site root).
   event_source_url: typeof window !== "undefined" ? window.location.href : "",
   user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-  fbp: isLegacyMetaEnabled() ? getCookie("_fbp") : undefined,
-  fbc: isLegacyMetaEnabled() ? getCookie("_fbc") : undefined,
+  // Set by the browser Pixel; lets Facebook match the server Purchase to the ad click.
+  fbp: getCookie("_fbp"),
+  fbc: getCookie("_fbc"),
   ttp: getCookie("_ttp"),
   ttclid: getTtclid(),
 });
