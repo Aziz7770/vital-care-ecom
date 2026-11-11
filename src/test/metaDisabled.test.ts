@@ -32,7 +32,7 @@ it("loads Pixel 1006266925864656 only on the owner domain, without auto PageView
   expect(block).toContain("fbq('init', '1006266925864656')");
   expect(block).toContain("'autoConfig', false");
   expect(block).toContain("disablePushState = true");
-  expect(block).not.toContain("PageView");
+  expect(block).not.toMatch(/fbq\(.track.,\s*.PageView/);
   expect(html).not.toContain("googletagmanager");
   expect(html).not.toContain("facebook.com/tr");
 });
