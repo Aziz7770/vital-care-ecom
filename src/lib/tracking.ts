@@ -1,5 +1,7 @@
-// Browser pixel tracking (TikTok only).
-// Facebook is NOT tracked in the browser: Meta events go server-side with neutral data only (see capi.ts).
+// Browser pixel tracking (TikTok + Facebook).
+// Facebook browser events go through fbqSafe: neutral data only, and only on pages
+// whose address reveals no health detail. Server events (capi.ts) cover every page.
+import { fbqSafe } from "@/lib/metaPrivacy";
 
 declare global {
   interface Window {
@@ -23,6 +25,7 @@ export const trackViewContent = (
     value: product.price,
     currency: "BDT",
   });
+  fbqSafe("ViewContent", { value: product.price, currency: "BDT", numItems: 1 }, eventId);
 };
 
 export const trackAddToCart = (
@@ -38,6 +41,7 @@ export const trackAddToCart = (
     value: product.price * quantity,
     currency: "BDT",
   });
+  fbqSafe("AddToCart", { value: product.price * quantity, currency: "BDT", numItems: quantity }, eventId);
 };
 
 export const trackInitiateCheckout = (
@@ -50,6 +54,7 @@ export const trackInitiateCheckout = (
     value: total,
     currency: "BDT",
   });
+  fbqSafe("InitiateCheckout", { value: total, currency: "BDT", numItems: items.reduce((s, i) => s + i.quantity, 0) }, eventId);
 };
 
 export const trackCompletePayment = (
@@ -64,12 +69,19 @@ export const trackCompletePayment = (
     currency: "BDT",
     order_id: orderId,
   }, eventId ? { event_id: eventId } : undefined);
+  fbqSafe(
+    "Purchase",
+    { value: total, currency: "BDT", numItems: items.reduce((s, i) => s + i.quantity, 0), orderId },
+    eventId,
+  );
 };
 
 export const trackContact = () => {
   window.ttq?.track("Contact", {});
+  fbqSafe("Contact");
 };
 
 export const trackSubmitForm = (formName: string, eventId?: string) => {
   window.ttq?.track("SubmitForm", { description: formName });
+  fbqSafe("Lead", {}, eventId);
 };
