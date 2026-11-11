@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import MetaPageViewTracker from "@/components/MetaPageViewTracker";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { LANDING_ONLY, LANDING_SLUG } from "@/config/siteMode";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -44,6 +45,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <MetaPageViewTracker />
           {LANDING_ONLY ? (
           <Routes>
             {/* Landing-only mode: only the offer page + ordering flow are public */}
