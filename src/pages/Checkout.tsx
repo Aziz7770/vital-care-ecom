@@ -11,6 +11,7 @@ import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionRegion } from "@supabase/supabase-js";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
+import { setMetaCustomer } from "@/lib/metaPrivacy";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 import { BD_LOCATIONS, BD_DISTRICTS, OTHER_THANA } from "@/data/bdLocations";
 
@@ -104,6 +105,9 @@ const Checkout = () => {
     // Shared event id for Pixel + CAPI deduplication
     const purchaseEventId = orderId;
     const capiCtx = { ...getCapiContext(), event_id: purchaseEventId };
+
+    // Hashed name/phone/email/district so Facebook can match the buyer (no medical details)
+    await setMetaCustomer({ name, phone, email, district });
 
     // Fire browser Pixel Purchase first so it is never lost if the network call is slow
     trackCompletePayment(

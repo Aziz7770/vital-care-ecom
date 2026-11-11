@@ -36,3 +36,27 @@ it("loads Pixel 1006266925864656 only on the owner domain, without auto PageView
   expect(html).not.toContain("googletagmanager");
   expect(html).not.toContain("facebook.com/tr");
 });
+
+import { buildMetaUserData, setMetaCustomer, normalizeMetaPhone } from "@/lib/metaPrivacy";
+
+it("normalizes Bangladeshi phone numbers, including Bangla digits", () => {
+  expect(normalizeMetaPhone("01354452108")).toBe("8801354452108");
+  expect(normalizeMetaPhone("০১৩৫৪৪৫২১০৮")).toBe("8801354452108");
+  expect(normalizeMetaPhone("+880 1354-452108")).toBe("8801354452108");
+});
+
+it("sends only hashed contact fields to the Pixel for customer matching", async () => {
+  const data = await buildMetaUserData({ name: "Rahim Uddin", phone: "01354452108", email: "A@b.com", district: "Gopalganj" });
+  expect(Object.keys(data).sort()).toEqual(["country", "ct", "em", "external_id", "fn", "ln", "ph"]);
+  for (const v of Object.values(data)) expect(v).toMatch(/^[0-9a-f]{64}$/);
+  // sha256("8801354452108")
+  const expected = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("8801354452108"))))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+  expect(data.ph).toBe(expected);
+
+  const pixel = vi.fn();
+  window.fbq = pixel;
+  expect(await setMetaCustomer({ phone: "01354452108" })).toBe(true);
+  expect(pixel.mock.calls[0][0]).toBe("init");
+  expect(pixel.mock.calls[0][1]).toBe("1006266925864656");
+});
