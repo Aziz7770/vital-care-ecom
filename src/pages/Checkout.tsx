@@ -102,8 +102,12 @@ const Checkout = () => {
       return;
     }
 
-    // Order is saved — tell Google Tag Manager (order ID + total only, no product data)
-    pushPurchase(orderId, currentTotal + currentDelivery);
+    // Order is saved — tell Google Tag Manager (order ID, total, neutral product codes only)
+    pushPurchase(
+      orderId,
+      currentTotal + currentDelivery,
+      currentItems.map((i) => ({ productId: i.product.id, price: i.product.price, quantity: i.quantity })),
+    );
 
     // Shared event id for Pixel + CAPI deduplication
     const purchaseEventId = orderId;
