@@ -72,3 +72,15 @@ it("enables tracking on the owner domain and Lovable preview links, but not else
   expect(re.test("localhost")).toBe(false);
   expect(re.test("evil.com")).toBe(false);
 });
+
+import { isMetaTrackedSite, META_PIXEL_ID, isMetaServerPurchaseEnabled } from "../../supabase/functions/_shared/metaSafe";
+
+it("sends the server Purchase to Pixel 1006266925864656 only from the owner domain and preview links", () => {
+  expect(META_PIXEL_ID).toBe("1006266925864656");
+  expect(isMetaServerPurchaseEnabled()).toBe(true);
+  expect(isMetaTrackedSite("https://bismillahhomeochamber.org/checkout")).toBe(true);
+  expect(isMetaTrackedSite("https://id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app/checkout")).toBe(true);
+  expect(isMetaTrackedSite("http://localhost:8080/checkout")).toBe(false);
+  expect(isMetaTrackedSite("https://evil.com/checkout")).toBe(false);
+  expect(isMetaTrackedSite(undefined)).toBe(false);
+});

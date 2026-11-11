@@ -1,4 +1,4 @@
-import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL, isLegacyMetaEnabled } from "../_shared/metaSafe.ts";
+import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL, META_PIXEL_ID, META_CAPI_TOKEN_ENV, isMetaServerPurchaseEnabled, isMetaTrackedSite } from "../_shared/metaSafe.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -124,9 +124,9 @@ async function sendMetaCapi(params: {
   orderId?: string;
   testEventCode?: string;
 }) {
-  if (!isLegacyMetaEnabled()) return { skipped: "legacy_meta_disabled" };
-  const PIXEL_ID = Deno.env.get("META_PIXEL_ID");
-  const TOKEN = Deno.env.get("META_CONVERSIONS_API_TOKEN");
+  if (!isMetaServerPurchaseEnabled()) return { skipped: "meta_server_disabled" };
+  const PIXEL_ID = META_PIXEL_ID;
+  const TOKEN = Deno.env.get(META_CAPI_TOKEN_ENV)?.trim();
   if (!PIXEL_ID || !TOKEN) {
     console.warn("Meta CAPI not configured");
     return { ok: false, error: "not_configured" };
@@ -166,10 +166,11 @@ async function sendMetaCapi(params: {
   };
 
   try {
-    const res = await fetch(`https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${TOKEN}`, {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${PIXEL_ID}/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        access_token: TOKEN,
         data: [event],
         ...(params.testEventCode ? { test_event_code: params.testEventCode } : {}),
       }),
@@ -385,7 +386,7 @@ Deno.serve(async (req) => {
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || undefined;
     const srcUrl = capi?.event_source_url || req.headers.get("referer") || req.headers.get("origin");
     const ownerSite = isOwnerSite(srcUrl);
-    results.capi = !ownerSite ? { skipped: "non_owner_domain" } : await sendMetaCapi({
+    results.capi = !isMetaTrackedSite(srcUrl) ? { skipped: "non_tracked_domain" } : await sendMetaCapi({
       eventName: "Purchase",
       eventId: capi?.event_id || orderId,
       eventSourceUrl:
