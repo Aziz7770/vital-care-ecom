@@ -1,5 +1,6 @@
 // Helpers for Meta Conversions API deduplication with the browser Pixel.
 import { supabase } from "@/integrations/supabase/client";
+import { isLegacyMetaEnabled } from "../../supabase/functions/_shared/metaSafe";
 
 export const getCookie = (name: string): string | undefined => {
   if (typeof document === "undefined") return undefined;
@@ -35,6 +36,7 @@ const setCookie = (name: string, value: string) => {
   document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${days90}; path=/; SameSite=Lax`;
 };
 const ensureMetaIds = () => {
+  if (!isLegacyMetaEnabled()) return;
   if (typeof document === "undefined" || !isOwnerDomain()) return;
   try {
     if (!getCookie("_fbp")) {
@@ -57,8 +59,8 @@ export const getCapiContext = () => ({
   // it is never forwarded to Meta (Meta receives the neutral site root).
   event_source_url: typeof window !== "undefined" ? window.location.href : "",
   user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-  fbp: getCookie("_fbp"),
-  fbc: getCookie("_fbc"),
+  fbp: isLegacyMetaEnabled() ? getCookie("_fbp") : undefined,
+  fbc: isLegacyMetaEnabled() ? getCookie("_fbc") : undefined,
   ttp: getCookie("_ttp"),
   ttclid: getTtclid(),
 });
@@ -75,6 +77,7 @@ export const sendServerEvent = (payload: {
   contentName?: string;
   contentCategory?: string;
 }) => {
+  if (!isLegacyMetaEnabled()) return;
   if (!isOwnerDomain()) return;
   ensureMetaIds();
   const ctx = getCapiContext();

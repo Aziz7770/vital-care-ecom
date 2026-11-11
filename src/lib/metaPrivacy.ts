@@ -3,6 +3,8 @@
 // fire on pages whose address reveals nothing about medicines or health.
 // Product/offer pages, consultation and admin pages are server-side only.
 
+import { isLegacyMetaEnabled } from "../../supabase/functions/_shared/metaSafe";
+
 export const META_BROWSER_SAFE_PATHS = [
   "/",
   "/cart",
@@ -43,6 +45,7 @@ export const buildMetaSafeParams = (p: MetaSafeParams): Record<string, unknown> 
 
 /** Fire a browser Pixel event only on safe pages, with neutral params only. */
 export const fbqSafe = (event: string, params: MetaSafeParams = {}, eventId?: string): boolean => {
+  if (!isLegacyMetaEnabled()) return false;
   if (typeof window === "undefined" || !window.fbq) return false;
   if (!isMetaBrowserSafePath(window.location.pathname)) return false;
   window.fbq("track", event, buildMetaSafeParams(params), eventId ? { eventID: eventId } : undefined);
