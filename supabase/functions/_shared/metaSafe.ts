@@ -8,6 +8,11 @@ export const META_NEUTRAL_SOURCE_URL = "https://bismillahhomeochamber.org/";
 // Retired app-owned integration: fail closed even if old credentials remain.
 export const isLegacyMetaEnabled = (): boolean => false;
 
+// Current browser-only Pixel (loaded from index.html on the owner domain).
+// Server events stay off until a Conversions API token for this Pixel is added.
+export const META_PIXEL_ID = "1006266925864656";
+export const isMetaBrowserPixelEnabled = (): boolean => true;
+
 export type MetaSafeInput = {
   value?: number;
   currency?: string;

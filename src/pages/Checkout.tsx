@@ -11,7 +11,6 @@ import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionRegion } from "@supabase/supabase-js";
 import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
-import { pushPurchase } from "@/lib/dataLayer";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
 import { BD_LOCATIONS, BD_DISTRICTS, OTHER_THANA } from "@/data/bdLocations";
 
@@ -101,13 +100,6 @@ const Checkout = () => {
       setSubmitting(false);
       return;
     }
-
-    // Order is saved — tell Google Tag Manager (order ID, total, neutral product codes only)
-    pushPurchase(
-      orderId,
-      currentTotal + currentDelivery,
-      currentItems.map((i) => ({ productId: i.product.id, price: i.product.price, quantity: i.quantity })),
-    );
 
     // Shared event id for Pixel + CAPI deduplication
     const purchaseEventId = orderId;
