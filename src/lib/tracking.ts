@@ -1,5 +1,7 @@
-// Browser pixel tracking (TikTok only).
-// Facebook is NOT tracked in the browser: Meta events go server-side with neutral data only (see capi.ts).
+// Browser pixel tracking (TikTok + Facebook).
+// Facebook browser events go through fbqSafe: neutral data only, and only on pages
+// whose address reveals no health detail. Server events (capi.ts) cover every page.
+import { fbqSafe } from "@/lib/metaPrivacy";
 
 declare global {
   interface Window {
