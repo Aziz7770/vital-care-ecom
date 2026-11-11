@@ -25,8 +25,36 @@ export const getTtclid = (): string | undefined => {
 };
 if (typeof window !== "undefined") getTtclid();
 
+const isOwnerDomain = () =>
+  typeof window !== "undefined" && /^(www\.)?bismillahhomeochamber\.org$/.test(window.location.hostname);
+
+// With the browser Pixel removed, keep Meta's first-party browser/click IDs ourselves
+// so server events still match ad clicks. Only on the owner domain.
+const setCookie = (name: string, value: string) => {
+  const days90 = 90 * 24 * 60 * 60;
+  document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${days90}; path=/; SameSite=Lax`;
+};
+const ensureMetaIds = () => {
+  if (typeof document === "undefined" || !isOwnerDomain()) return;
+  try {
+    if (!getCookie("_fbp")) {
+      setCookie("_fbp", `fb.1.${Date.now()}.${Math.floor(1e9 + Math.random() * 9e9)}`);
+    }
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    if (fbclid) {
+      const existing = getCookie("_fbc");
+      if (!existing || !existing.endsWith(`.${fbclid}`)) setCookie("_fbc", `fb.1.${Date.now()}.${fbclid}`);
+    }
+  } catch {
+    /* ignore */
+  }
+};
+ensureMetaIds();
+
 export const getCapiContext = () => ({
   event_id: genEventId(),
+  // Used only server-side to confirm the visit came from the owner domain;
+  // it is never forwarded to Meta (Meta receives the neutral site root).
   event_source_url: typeof window !== "undefined" ? window.location.href : "",
   user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
   fbp: getCookie("_fbp"),
@@ -35,9 +63,10 @@ export const getCapiContext = () => ({
   ttclid: getTtclid(),
 });
 
-// Fire-and-forget server-side event via the meta-capi-event edge function.
+// Fire-and-forget server-side Meta event. Privacy: product IDs, names and
+// categories are dropped here — only value, currency and item count are sent.
 export const sendServerEvent = (payload: {
-  eventName: "ViewContent" | "AddToCart" | "InitiateCheckout";
+  eventName: "PageView" | "ViewContent" | "AddToCart" | "InitiateCheckout";
   eventId: string;
   value?: number;
   currency?: string;
@@ -46,9 +75,16 @@ export const sendServerEvent = (payload: {
   contentName?: string;
   contentCategory?: string;
 }) => {
+  if (!isOwnerDomain()) return;
+  ensureMetaIds();
   const ctx = getCapiContext();
+  const numItems = payload.contents?.reduce((sum, c) => sum + c.quantity, 0);
   const body = {
-    ...payload,
+    eventName: payload.eventName,
+    eventId: payload.eventId,
+    value: payload.value,
+    currency: payload.currency,
+    contents: numItems ? [{ id: "item", quantity: numItems, item_price: 0 }] : undefined,
     eventSourceUrl: ctx.event_source_url,
     userAgent: ctx.user_agent,
     fbp: ctx.fbp,

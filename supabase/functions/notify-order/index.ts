@@ -1,3 +1,4 @@
+import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL } from "../_shared/metaSafe.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -145,23 +146,20 @@ async function sendMetaCapi(params: {
   if (params.fbp) user_data.fbp = params.fbp;
   if (params.fbc) user_data.fbc = params.fbc;
 
-  const custom_data: Record<string, unknown> = {};
-  if (params.value !== undefined) custom_data.value = params.value;
-  if (params.currency) custom_data.currency = params.currency;
-  if (params.contents && params.contents.length) {
-    custom_data.contents = params.contents;
-    custom_data.content_ids = params.contents.map((c) => c.id);
-    custom_data.content_type = "product";
-    custom_data.num_items = params.contents.reduce((s, c) => s + c.quantity, 0);
-  }
-  if (params.orderId) custom_data.order_id = params.orderId;
+  // Privacy: Meta gets only order ID, value, currency and item count — no product/medicine details.
+  const custom_data = buildMetaSafeCustomData({
+    value: params.value,
+    currency: params.currency,
+    numItems: params.contents?.reduce((sum, c) => sum + c.quantity, 0),
+    orderId: params.orderId,
+  });
 
   const event = {
     event_name: params.eventName,
     event_time: Math.floor(Date.now() / 1000),
     event_id: params.eventId,
     action_source: "website",
-    event_source_url: params.eventSourceUrl || "https://bismillahhomeochamber.org/checkout",
+    event_source_url: META_NEUTRAL_SOURCE_URL,
     user_data,
     custom_data,
   };

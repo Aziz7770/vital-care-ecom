@@ -1,3 +1,4 @@
+import { META_NEUTRAL_SOURCE_URL } from "../_shared/metaSafe.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -59,9 +60,9 @@ async function sendLeadCapi(params: {
     event_time: Math.floor(Date.now() / 1000),
     event_id: params.eventId,
     action_source: "website",
-    event_source_url: params.eventSourceUrl || "https://bismillahhomeochamber.org",
+    event_source_url: META_NEUTRAL_SOURCE_URL,
     user_data,
-    custom_data: { content_name: params.contentName },
+    custom_data: {},
   };
 
   try {

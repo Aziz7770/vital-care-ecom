@@ -6,10 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SITE_URL = "https://bismillahhomeochamber.org";
+import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL } from "../_shared/metaSafe.ts";
 
 type EventBody = {
-  eventName: "ViewContent" | "AddToCart" | "InitiateCheckout";
+  eventName: "PageView" | "ViewContent" | "AddToCart" | "InitiateCheckout";
   eventId: string;
   eventSourceUrl?: string;
   userAgent?: string;
@@ -65,31 +65,16 @@ Deno.serve(async (req) => {
     if (body.fbp) user_data.fbp = body.fbp;
     if (body.fbc) user_data.fbc = body.fbc;
 
-    const custom_data: Record<string, unknown> = {};
-    if (body.value !== undefined) custom_data.value = body.value;
-    if (body.currency) custom_data.currency = body.currency;
-    if (body.contents?.length) {
-      custom_data.contents = body.contents;
-      custom_data.content_ids = body.contents.map((c) => c.id);
-      custom_data.content_type = "product";
-      custom_data.num_items = body.contents.reduce((s, c) => s + c.quantity, 0);
-    } else if (body.contentIds?.length) {
-      custom_data.content_ids = body.contentIds;
-      custom_data.content_type = "product";
-    }
-    if (body.contentName) custom_data.content_name = body.contentName;
-    if (body.contentCategory) custom_data.content_category = body.contentCategory;
+    // Privacy: never forward product IDs, names, categories or page paths to Meta.
+    const numItems = body.contents?.reduce((sum, c) => sum + (c.quantity || 0), 0);
+    const custom_data = buildMetaSafeCustomData({ value: body.value, currency: body.currency, numItems });
 
     const event = {
       event_name: body.eventName,
       event_time: Math.floor(Date.now() / 1000),
       event_id: body.eventId,
       action_source: "website",
-      event_source_url:
-        body.eventSourceUrl ||
-        req.headers.get("referer") ||
-        req.headers.get("origin") ||
-        SITE_URL,
+      event_source_url: META_NEUTRAL_SOURCE_URL,
       user_data,
       custom_data,
     };
