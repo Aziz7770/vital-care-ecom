@@ -60,3 +60,15 @@ it("sends only hashed contact fields to the Pixel for customer matching", async 
   expect(pixel.mock.calls[0][0]).toBe("init");
   expect(pixel.mock.calls[0][1]).toBe("1006266925864656");
 });
+
+it("enables tracking on the owner domain and Lovable preview links, but not elsewhere", () => {
+  const html = readFileSync("index.html", "utf8");
+  const src = html.match(/window\.__TRACK_OK = (\/.*\/)\.test/)![1];
+  const re = new Function(`return ${src}`)() as RegExp;
+  expect(re.test("bismillahhomeochamber.org")).toBe(true);
+  expect(re.test("www.bismillahhomeochamber.org")).toBe(true);
+  expect(re.test("id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app")).toBe(true);
+  expect(re.test("vital-care-ecom.lovable.app")).toBe(true);
+  expect(re.test("localhost")).toBe(false);
+  expect(re.test("evil.com")).toBe(false);
+});

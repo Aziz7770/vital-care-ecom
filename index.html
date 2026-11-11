@@ -57,9 +57,9 @@
     }
     </script>
 
-  <!-- Tracking only on the owner's domain -->
+  <!-- Tracking on the owner's domain and the Lovable preview/published links (owner allows test orders) -->
   <script>
-  window.__TRACK_OK = /^(www\.)?bismillahhomeochamber\.org$/.test(location.hostname);
+  window.__TRACK_OK = /^((www\.)?bismillahhomeochamber\.org|[a-z0-9-]+\.lovable\.app|[a-z0-9-]+\.lovableproject\.com)$/.test(location.hostname);
   </script>
 
   <!-- TikTok Pixel Code Start -->
