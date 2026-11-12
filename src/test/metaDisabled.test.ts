@@ -25,11 +25,11 @@ it("sends nothing from a product page whose address names a condition", () => {
   expect(pixel).not.toHaveBeenCalled();
 });
 
-it("loads Pixel 1006266925864656 only on the owner domain, without auto PageView, and no Tag Manager", () => {
+it("loads Pixel 1748561049573616 only on the owner domain, without auto PageView, and no Tag Manager", () => {
   const html = readFileSync("index.html", "utf8");
   const block = html.slice(html.indexOf("<!-- Meta Pixel"), html.indexOf("<!-- End Meta Pixel Code -->"));
   expect(block).toContain("if (window.__TRACK_OK)");
-  expect(block).toContain("fbq('init', '1006266925864656')");
+  expect(block).toContain("fbq('init', '1748561049573616')");
   expect(block).toContain("'autoConfig', false");
   expect(block).toContain("disablePushState = true");
   expect(block).not.toMatch(/fbq\(.track.,\s*.PageView/);
@@ -58,7 +58,7 @@ it("sends only hashed contact fields to the Pixel for customer matching", async 
   window.fbq = pixel;
   expect(await setMetaCustomer({ phone: "01354452108" })).toBe(true);
   expect(pixel.mock.calls[0][0]).toBe("init");
-  expect(pixel.mock.calls[0][1]).toBe("1006266925864656");
+  expect(pixel.mock.calls[0][1]).toBe("1748561049573616");
 });
 
 it("enables tracking on the owner domain and Lovable preview links, but not elsewhere", () => {
@@ -75,12 +75,33 @@ it("enables tracking on the owner domain and Lovable preview links, but not else
 
 import { isMetaTrackedSite, META_PIXEL_ID, isMetaServerPurchaseEnabled } from "../../supabase/functions/_shared/metaSafe";
 
-it("sends the server Purchase to Pixel 1006266925864656 only from the owner domain and preview links", () => {
-  expect(META_PIXEL_ID).toBe("1006266925864656");
+it("sends the server Purchase to Pixel 1748561049573616 only from the owner domain and preview links", () => {
+  expect(META_PIXEL_ID).toBe("1748561049573616");
   expect(isMetaServerPurchaseEnabled()).toBe(true);
   expect(isMetaTrackedSite("https://bismillahhomeochamber.org/checkout")).toBe(true);
   expect(isMetaTrackedSite("https://id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app/checkout")).toBe(true);
   expect(isMetaTrackedSite("http://localhost:8080/checkout")).toBe(false);
   expect(isMetaTrackedSite("https://evil.com/checkout")).toBe(false);
   expect(isMetaTrackedSite(undefined)).toBe(false);
+});
+
+import { metaServerPurchaseAccepted, trackMetaPurchaseFallback } from "@/lib/tracking";
+
+it("uses the browser Pixel Purchase only when the server Purchase was not accepted", () => {
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: true, data: { events_received: 1 } } } })).toBe(true);
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: false, error: "not_configured" } } })).toBe(false);
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: true, data: { events_received: 0 } } } })).toBe(false);
+  expect(metaServerPurchaseAccepted(null)).toBe(false);
+
+  window.history.replaceState({}, "", "/checkout");
+  const pixel = vi.fn();
+  window.fbq = pixel;
+  expect(trackMetaPurchaseFallback("ORD-9", 1450, 2, "ORD-9")).toBe(true);
+  expect(pixel.mock.calls[0][3]).toEqual({ eventID: "ORD-9" });
+});
+
+it("Checkout no longer fires the Facebook Purchase before the server answers", () => {
+  const src = readFileSync("src/lib/tracking.ts", "utf8");
+  const fn = src.slice(src.indexOf("export const trackCompletePayment"), src.indexOf("export const metaServerPurchaseAccepted"));
+  expect(fn).not.toContain("fbqSafe");
 });

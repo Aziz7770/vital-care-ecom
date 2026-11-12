@@ -10,7 +10,7 @@ import { CheckCircle } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionRegion } from "@supabase/supabase-js";
-import { trackInitiateCheckout, trackCompletePayment } from "@/lib/tracking";
+import { trackInitiateCheckout, trackCompletePayment, metaServerPurchaseAccepted, trackMetaPurchaseFallback } from "@/lib/tracking";
 import { setMetaCustomer } from "@/lib/metaPrivacy";
 import { getMetaTestCode } from "@/lib/metaTestCode";
 import { getCapiContext, genEventId, sendServerEvent } from "@/lib/capi";
@@ -110,7 +110,7 @@ const Checkout = () => {
     // Hashed name/phone/email/district so Facebook can match the buyer (no medical details)
     await setMetaCustomer({ name, phone, email, district });
 
-    // Fire browser Pixel Purchase first so it is never lost if the network call is slow
+    // TikTok browser CompletePayment (Facebook Purchase is handled below: server first, Pixel only as backup)
     trackCompletePayment(
       orderId,
       currentItems.map((i) => ({ id: i.product.id, name: i.product.name, price: i.product.price, quantity: i.quantity })),
@@ -119,8 +119,9 @@ const Checkout = () => {
     );
 
     // Send notifications via edge function
+    let notifyRes: unknown = null;
     try {
-      await supabase.functions.invoke('notify-order', {
+      const { data: notifyData } = await supabase.functions.invoke('notify-order', {
         // Pin to Singapore: Bangladesh visitors otherwise route to India (ap-south-1),
         // where TikTok's Events API rejects every call ("banned Country list").
         region: FunctionRegion.ApSoutheast1,
@@ -145,8 +146,20 @@ const Checkout = () => {
           testEventCode: getMetaTestCode(),
         },
       });
+      notifyRes = notifyData;
     } catch (notifyErr) {
       console.error("Notification error:", notifyErr);
+    }
+
+    // Facebook Purchase: one send only. Server (Conversions API) is primary;
+    // if Facebook did not accept it, the browser Pixel sends it instead.
+    if (!metaServerPurchaseAccepted(notifyRes)) {
+      trackMetaPurchaseFallback(
+        orderId,
+        currentTotal + currentDelivery,
+        currentItems.reduce((s, i) => s + i.quantity, 0),
+        purchaseEventId,
+      );
     }
 
     markProductsAsOrdered(currentItems.map((i) => i.product.id));

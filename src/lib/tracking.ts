@@ -69,12 +69,20 @@ export const trackCompletePayment = (
     currency: "BDT",
     order_id: orderId,
   }, eventId ? { event_id: eventId } : undefined);
-  fbqSafe(
-    "Purchase",
-    { value: total, currency: "BDT", numItems: items.reduce((s, i) => s + i.quantity, 0), orderId },
-    eventId,
-  );
 };
+
+/**
+ * Facebook Purchase is sent once: by the server (Conversions API) first.
+ * The browser Pixel sends it only when the server copy was not accepted
+ * (same event ID as a safety net, so Facebook still never counts it twice).
+ */
+export const metaServerPurchaseAccepted = (res: unknown): boolean => {
+  const capi = (res as { results?: { capi?: { ok?: boolean; data?: { events_received?: number } } } } | null)?.results?.capi;
+  return !!capi?.ok && (capi.data?.events_received ?? 0) >= 1;
+};
+
+export const trackMetaPurchaseFallback = (orderId: string, total: number, numItems: number, eventId: string) =>
+  fbqSafe("Purchase", { value: total, currency: "BDT", numItems, orderId }, eventId);
 
 export const trackContact = () => {
   window.ttq?.track("Contact", {});
