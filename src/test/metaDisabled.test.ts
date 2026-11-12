@@ -84,3 +84,24 @@ it("sends the server Purchase to Pixel 1748561049573616 only from the owner doma
   expect(isMetaTrackedSite("https://evil.com/checkout")).toBe(false);
   expect(isMetaTrackedSite(undefined)).toBe(false);
 });
+
+import { metaServerPurchaseAccepted, trackMetaPurchaseFallback } from "@/lib/tracking";
+
+it("uses the browser Pixel Purchase only when the server Purchase was not accepted", () => {
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: true, data: { events_received: 1 } } } })).toBe(true);
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: false, error: "not_configured" } } })).toBe(false);
+  expect(metaServerPurchaseAccepted({ results: { capi: { ok: true, data: { events_received: 0 } } } })).toBe(false);
+  expect(metaServerPurchaseAccepted(null)).toBe(false);
+
+  window.history.replaceState({}, "", "/checkout");
+  const pixel = vi.fn();
+  window.fbq = pixel;
+  expect(trackMetaPurchaseFallback("ORD-9", 1450, 2, "ORD-9")).toBe(true);
+  expect(pixel.mock.calls[0][3]).toEqual({ eventID: "ORD-9" });
+});
+
+it("Checkout no longer fires the Facebook Purchase before the server answers", () => {
+  const src = readFileSync("src/lib/tracking.ts", "utf8");
+  const fn = src.slice(src.indexOf("export const trackCompletePayment"), src.indexOf("export const metaServerPurchaseAccepted"));
+  expect(fn).not.toContain("fbqSafe");
+});
