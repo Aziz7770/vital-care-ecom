@@ -46,3 +46,22 @@ export function buildMetaSafeCustomData(input: MetaSafeInput): Record<string, un
   }
   return out;
 }
+
+/** Build Meta's click ID (fbc) from a landing-page fbclid, keeping the fbclid exactly as Facebook sent it. */
+export function buildMetaFbc(fbclid: string | null | undefined, timeMs: number): string | undefined {
+  const id = (fbclid || "").trim();
+  if (!id || /\s/.test(id)) return undefined;
+  return `fb.1.${Math.floor(timeMs)}.${id}`;
+}
+
+/** Accept fbc only in Meta's exact format; never rewrite (lowercase/trim) the fbclid part — drop it instead. */
+export function sanitizeMetaFbc(fbc: unknown): string | undefined {
+  if (typeof fbc !== "string") return undefined;
+  return /^fb\.[0-9]\.[0-9]{10,13}\.[^\s.][^\s]*$/.test(fbc) ? fbc : undefined;
+}
+
+/** Accept fbp only in Meta's exact format. */
+export function sanitizeMetaFbp(fbp: unknown): string | undefined {
+  if (typeof fbp !== "string") return undefined;
+  return /^fb\.[0-9]\.[0-9]{10,13}\.[0-9]+$/.test(fbp) ? fbp : undefined;
+}
