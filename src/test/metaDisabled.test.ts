@@ -1,8 +1,17 @@
+// @vitest-environment-options {"url":"https://bismillahhomeochamber.org"}
 import { readFileSync } from "node:fs";
 import { afterEach, expect, it, vi } from "vitest";
 import { fbqSafe } from "@/lib/metaPrivacy";
 
-afterEach(() => { delete window.fbq; });
+afterEach(() => { vi.unstubAllGlobals(); delete window.fbq; });
+
+it("blocks browser events and customer matching on preview even if fbq exists", async () => {
+  const pixel = vi.fn();
+  vi.stubGlobal("window", { fbq: pixel, location: { href: "https://vital-care-ecom.lovable.app/checkout", pathname: "/checkout" } });
+  expect(fbqSafe("Purchase", { value: 550, currency: "BDT" })).toBe(false);
+  expect(await setMetaCustomer({ phone: "01354452108" })).toBe(false);
+  expect(pixel).not.toHaveBeenCalled();
+});
 
 it("sends checkout Purchase to the Pixel with neutral data only", () => {
   window.history.replaceState({}, "", "/checkout");
@@ -28,7 +37,7 @@ it("sends nothing from a product page whose address names a condition", () => {
 it("loads Pixel 1748561049573616 only on the owner domain, without auto PageView, and no Tag Manager", () => {
   const html = readFileSync("index.html", "utf8");
   const block = html.slice(html.indexOf("<!-- Meta Pixel"), html.indexOf("<!-- End Meta Pixel Code -->"));
-  expect(block).toContain("if (window.__TRACK_OK)");
+  expect(block).toContain("if (window.__META_TRACK_OK)");
   expect(block).toContain("fbq('init', '1748561049573616')");
   expect(block).toContain("'autoConfig', false");
   expect(block).toContain("disablePushState = true");
@@ -61,25 +70,32 @@ it("sends only hashed contact fields to the Pixel for customer matching", async 
   expect(pixel.mock.calls[0][1]).toBe("1748561049573616");
 });
 
-it("enables tracking on the owner domain and Lovable preview links, but not elsewhere", () => {
+it("enables Facebook only on the owner domain, never preview or other domains", () => {
   const html = readFileSync("index.html", "utf8");
-  const src = html.match(/window\.__TRACK_OK = (\/.*\/)\.test/)![1];
+  const src = html.match(/window\.__META_TRACK_OK = (\/.*\/)\.test/)?.[1];
+  if (!src) throw new Error("Missing Facebook domain guard");
   const re = new Function(`return ${src}`)() as RegExp;
   expect(re.test("bismillahhomeochamber.org")).toBe(true);
   expect(re.test("www.bismillahhomeochamber.org")).toBe(true);
-  expect(re.test("id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app")).toBe(true);
-  expect(re.test("vital-care-ecom.lovable.app")).toBe(true);
+  expect(re.test("id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app")).toBe(false);
+  expect(re.test("vital-care-ecom.lovable.app")).toBe(false);
+  expect(re.test("lovable.dev")).toBe(false);
+  expect(re.test("test.lovableproject.com")).toBe(false);
   expect(re.test("localhost")).toBe(false);
   expect(re.test("evil.com")).toBe(false);
 });
 
 import { isMetaTrackedSite, META_PIXEL_ID, isMetaServerPurchaseEnabled } from "../../supabase/functions/_shared/metaSafe";
 
-it("sends the server Purchase to Pixel 1748561049573616 only from the owner domain and preview links", () => {
+it("sends the server Purchase to Pixel 1748561049573616 only from the owner domain", () => {
   expect(META_PIXEL_ID).toBe("1748561049573616");
   expect(isMetaServerPurchaseEnabled()).toBe(true);
   expect(isMetaTrackedSite("https://bismillahhomeochamber.org/checkout")).toBe(true);
-  expect(isMetaTrackedSite("https://id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app/checkout")).toBe(true);
+  expect(isMetaTrackedSite("https://www.bismillahhomeochamber.org/checkout")).toBe(true);
+  expect(isMetaTrackedSite("https://id-preview--fc5eb54d-7b1d-46e6-b7e9-a6e5d06e4038.lovable.app/checkout")).toBe(false);
+  expect(isMetaTrackedSite("https://vital-care-ecom.lovable.app/checkout")).toBe(false);
+  expect(isMetaTrackedSite("https://lovable.dev/checkout")).toBe(false);
+  expect(isMetaTrackedSite("https://bismillahhomeochamber.org.evil.com/checkout")).toBe(false);
   expect(isMetaTrackedSite("http://localhost:8080/checkout")).toBe(false);
   expect(isMetaTrackedSite("https://evil.com/checkout")).toBe(false);
   expect(isMetaTrackedSite(undefined)).toBe(false);
