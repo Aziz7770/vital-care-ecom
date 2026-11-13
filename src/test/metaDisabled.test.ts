@@ -3,7 +3,15 @@ import { readFileSync } from "node:fs";
 import { afterEach, expect, it, vi } from "vitest";
 import { fbqSafe } from "@/lib/metaPrivacy";
 
-afterEach(() => { delete window.fbq; });
+afterEach(() => { vi.unstubAllGlobals(); delete window.fbq; });
+
+it("blocks browser events and customer matching on preview even if fbq exists", async () => {
+  const pixel = vi.fn();
+  vi.stubGlobal("window", { fbq: pixel, location: { href: "https://vital-care-ecom.lovable.app/checkout", pathname: "/checkout" } });
+  expect(fbqSafe("Purchase", { value: 550, currency: "BDT" })).toBe(false);
+  expect(await setMetaCustomer({ phone: "01354452108" })).toBe(false);
+  expect(pixel).not.toHaveBeenCalled();
+});
 
 it("sends checkout Purchase to the Pixel with neutral data only", () => {
   window.history.replaceState({}, "", "/checkout");
