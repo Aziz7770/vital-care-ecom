@@ -3,7 +3,7 @@
 // fire on pages whose address reveals nothing about medicines or health.
 // Product/offer pages, consultation and admin pages are server-side only.
 
-import { isMetaBrowserPixelEnabled, META_PIXEL_ID } from "../../supabase/functions/_shared/metaSafe";
+import { isMetaBrowserPixelEnabled, isMetaTrackedSite, META_PIXEL_ID } from "../../supabase/functions/_shared/metaSafe";
 
 export const META_BROWSER_SAFE_PATHS = [
   "/",
@@ -47,6 +47,7 @@ export const buildMetaSafeParams = (p: MetaSafeParams): Record<string, unknown> 
 export const fbqSafe = (event: string, params: MetaSafeParams = {}, eventId?: string): boolean => {
   if (!isMetaBrowserPixelEnabled()) return false;
   if (typeof window === "undefined" || !window.fbq) return false;
+  if (!isMetaTrackedSite(window.location.href)) return false;
   if (!isMetaBrowserSafePath(window.location.pathname)) return false;
   window.fbq("track", event, buildMetaSafeParams(params), eventId ? { eventID: eventId } : undefined);
   return true;
@@ -95,6 +96,7 @@ export const buildMetaUserData = async (c: MetaCustomer): Promise<Record<string,
 export const setMetaCustomer = async (c: MetaCustomer): Promise<boolean> => {
   if (!isMetaBrowserPixelEnabled()) return false;
   if (typeof window === "undefined" || !window.fbq) return false;
+  if (!isMetaTrackedSite(window.location.href)) return false;
   try {
     window.fbq("init", META_PIXEL_ID, await buildMetaUserData(c));
     return true;

@@ -17,12 +17,12 @@ export const isMetaBrowserPixelEnabled = (): boolean => true;
 export const META_CAPI_TOKEN_ENV = "META_CAPI_TOKEN_1748561049573616";
 export const isMetaServerPurchaseEnabled = (): boolean => true;
 
-/** Same hosts as window.__TRACK_OK in index.html: owner domain + Lovable preview/published links. */
+/** Same hosts as window.__META_TRACK_OK in index.html: owner domain only. */
 export function isMetaTrackedSite(url?: string | null): boolean {
   if (!url) return false;
   try {
     const h = new URL(url).hostname;
-    return /^((www\.)?bismillahhomeochamber\.org|[a-z0-9-]+\.lovable\.app|[a-z0-9-]+\.lovableproject\.com)$/.test(h);
+    return /^(www\.)?bismillahhomeochamber\.org$/.test(h);
   } catch { return false; }
 }
 
