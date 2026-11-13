@@ -1,4 +1,4 @@
-import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL, META_PIXEL_ID, META_CAPI_TOKEN_ENV, isMetaServerPurchaseEnabled, isMetaTrackedSite } from "../_shared/metaSafe.ts";
+import { buildMetaSafeCustomData, META_NEUTRAL_SOURCE_URL, META_PIXEL_ID, META_CAPI_TOKEN_ENV, isMetaServerPurchaseEnabled, isMetaTrackedSite, sanitizeMetaFbc, sanitizeMetaFbp } from "../_shared/metaSafe.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -133,7 +133,12 @@ async function sendMetaCapi(params: {
   }
 
   const user_data: Record<string, unknown> = {};
-  if (params.phone) user_data.ph = [await sha256(normalizePhone(params.phone))];
+  const phoneNorm = params.phone ? normalizePhone(params.phone) : "";
+  if (phoneNorm) {
+    const hashedPhone = await sha256(phoneNorm);
+    user_data.ph = [hashedPhone];
+    user_data.external_id = [hashedPhone];
+  }
   if (params.email) user_data.em = [await sha256(params.email)];
   if (params.name) {
     const parts = params.name.trim().split(/\s+/);
@@ -144,8 +149,11 @@ async function sendMetaCapi(params: {
   if (params.country) user_data.country = [await sha256(params.country)];
   if (params.clientIp) user_data.client_ip_address = params.clientIp;
   if (params.userAgent) user_data.client_user_agent = params.userAgent;
-  if (params.fbp) user_data.fbp = params.fbp;
-  if (params.fbc) user_data.fbc = params.fbc;
+  // Click IDs pass through untouched (no lowercasing/trimming); malformed ones are dropped.
+  const fbp = sanitizeMetaFbp(params.fbp);
+  const fbc = sanitizeMetaFbc(params.fbc);
+  if (fbp) user_data.fbp = fbp;
+  if (fbc) user_data.fbc = fbc;
 
   // Privacy: Meta gets only order ID, value, currency and item count — no product/medicine details.
   const custom_data = buildMetaSafeCustomData({

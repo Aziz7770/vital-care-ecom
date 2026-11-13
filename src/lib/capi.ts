@@ -1,6 +1,6 @@
 // Helpers for Meta Conversions API deduplication with the browser Pixel.
 import { supabase } from "@/integrations/supabase/client";
-import { isLegacyMetaEnabled } from "../../supabase/functions/_shared/metaSafe";
+import { isLegacyMetaEnabled, isMetaTrackedSite, buildMetaFbc, sanitizeMetaFbc } from "../../supabase/functions/_shared/metaSafe";
 
 export const getCookie = (name: string): string | undefined => {
   if (typeof document === "undefined") return undefined;
@@ -29,15 +29,15 @@ if (typeof window !== "undefined") getTtclid();
 const isOwnerDomain = () =>
   typeof window !== "undefined" && /^(www\.)?bismillahhomeochamber\.org$/.test(window.location.hostname);
 
-// With the browser Pixel removed, keep Meta's first-party browser/click IDs ourselves
-// so server events still match ad clicks. Only on the owner domain.
+// Keep Meta's first-party browser ID (_fbp) and ad-click ID (_fbc) ourselves on every page,
+// including pages where the Pixel stays silent, so the server Purchase can be matched to the ad click.
+// The fbclid is stored exactly as Facebook sent it (never lowercased or shortened).
 const setCookie = (name: string, value: string) => {
   const days90 = 90 * 24 * 60 * 60;
-  document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${days90}; path=/; SameSite=Lax`;
+  document.cookie = `${name}=${value}; max-age=${days90}; path=/; SameSite=Lax`;
 };
-const ensureMetaIds = () => {
-  if (!isLegacyMetaEnabled()) return;
-  if (typeof document === "undefined" || !isOwnerDomain()) return;
+export const ensureMetaClickIds = () => {
+  if (typeof document === "undefined" || !isMetaTrackedSite(window.location.href)) return;
   try {
     if (!getCookie("_fbp")) {
       setCookie("_fbp", `fb.1.${Date.now()}.${Math.floor(1e9 + Math.random() * 9e9)}`);
@@ -45,13 +45,16 @@ const ensureMetaIds = () => {
     const fbclid = new URLSearchParams(window.location.search).get("fbclid");
     if (fbclid) {
       const existing = getCookie("_fbc");
-      if (!existing || !existing.endsWith(`.${fbclid}`)) setCookie("_fbc", `fb.1.${Date.now()}.${fbclid}`);
+      if (!existing || !existing.endsWith(`.${fbclid}`)) {
+        const fbc = buildMetaFbc(fbclid, Date.now());
+        if (fbc) setCookie("_fbc", fbc);
+      }
     }
   } catch {
     /* ignore */
   }
 };
-ensureMetaIds();
+ensureMetaClickIds();
 
 export const getCapiContext = () => ({
   event_id: genEventId(),
@@ -61,7 +64,7 @@ export const getCapiContext = () => ({
   user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
   // Set by the browser Pixel; lets Facebook match the server Purchase to the ad click.
   fbp: getCookie("_fbp"),
-  fbc: getCookie("_fbc"),
+  fbc: sanitizeMetaFbc(getCookie("_fbc")),
   ttp: getCookie("_ttp"),
   ttclid: getTtclid(),
 });
@@ -80,7 +83,7 @@ export const sendServerEvent = (payload: {
 }) => {
   if (!isLegacyMetaEnabled()) return;
   if (!isOwnerDomain()) return;
-  ensureMetaIds();
+  ensureMetaClickIds();
   const ctx = getCapiContext();
   const numItems = payload.contents?.reduce((sum, c) => sum + c.quantity, 0);
   const body = {
