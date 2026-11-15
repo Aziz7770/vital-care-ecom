@@ -34,11 +34,11 @@ it("sends nothing from a product page whose address names a condition", () => {
   expect(pixel).not.toHaveBeenCalled();
 });
 
-it("loads Pixel 1748561049573616 only on the owner domain, without auto PageView, and no Tag Manager", () => {
+it("loads Pixel 1702737287606064 only on the owner domain, without auto PageView, and no Tag Manager", () => {
   const html = readFileSync("index.html", "utf8");
   const block = html.slice(html.indexOf("<!-- Meta Pixel"), html.indexOf("<!-- End Meta Pixel Code -->"));
   expect(block).toContain("if (window.__META_TRACK_OK)");
-  expect(block).toContain("fbq('init', '1748561049573616')");
+  expect(block).toContain("fbq('init', '1702737287606064')");
   expect(block).toContain("'autoConfig', false");
   expect(block).toContain("disablePushState = true");
   expect(block).not.toMatch(/fbq\(.track.,\s*.PageView/);
@@ -67,7 +67,7 @@ it("sends only hashed contact fields to the Pixel for customer matching", async 
   window.fbq = pixel;
   expect(await setMetaCustomer({ phone: "01354452108" })).toBe(true);
   expect(pixel.mock.calls[0][0]).toBe("init");
-  expect(pixel.mock.calls[0][1]).toBe("1748561049573616");
+  expect(pixel.mock.calls[0][1]).toBe("1702737287606064");
 });
 
 it("enables Facebook only on the owner domain, never preview or other domains", () => {
@@ -87,8 +87,8 @@ it("enables Facebook only on the owner domain, never preview or other domains", 
 
 import { isMetaTrackedSite, META_PIXEL_ID, isMetaServerPurchaseEnabled } from "../../supabase/functions/_shared/metaSafe";
 
-it("sends the server Purchase to Pixel 1748561049573616 only from the owner domain", () => {
-  expect(META_PIXEL_ID).toBe("1748561049573616");
+it("sends the server Purchase to Pixel 1702737287606064 only from the owner domain", () => {
+  expect(META_PIXEL_ID).toBe("1702737287606064");
   expect(isMetaServerPurchaseEnabled()).toBe(true);
   expect(isMetaTrackedSite("https://bismillahhomeochamber.org/checkout")).toBe(true);
   expect(isMetaTrackedSite("https://www.bismillahhomeochamber.org/checkout")).toBe(true);
