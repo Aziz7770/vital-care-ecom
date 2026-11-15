@@ -9,12 +9,12 @@ export const META_NEUTRAL_SOURCE_URL = "https://bismillahhomeochamber.org/";
 export const isLegacyMetaEnabled = (): boolean => false;
 
 // Current browser-only Pixel (loaded from index.html on the owner domain).
-export const META_PIXEL_ID = "1748561049573616";
+export const META_PIXEL_ID = "1702737287606064";
 export const isMetaBrowserPixelEnabled = (): boolean => true;
 
 // Conversions API for the current Pixel: server-side Purchase only (from notify-order),
 // deduplicated with the browser Purchase via event_id = order ID.
-export const META_CAPI_TOKEN_ENV = "META_CAPI_TOKEN_1748561049573616";
+export const META_CAPI_TOKEN_ENV = "META_CAPI_TOKEN_1702737287606064";
 export const isMetaServerPurchaseEnabled = (): boolean => true;
 
 /** Same hosts as window.__META_TRACK_OK in index.html: owner domain only. */
