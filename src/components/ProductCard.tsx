@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { ORDER_LOCKED_MESSAGE } from "@/lib/orderLock";
 import { Star, CreditCard, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackAddToCart } from "@/lib/tracking";
@@ -14,7 +15,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   const handleOrder = () => {
     if (productOrdered) {
-      toast.info("এই পণ্যটি ইতিমধ্যে অর্ডার করা হয়েছে।");
+      toast.info(ORDER_LOCKED_MESSAGE);
       return;
     }
     addToCart(product);

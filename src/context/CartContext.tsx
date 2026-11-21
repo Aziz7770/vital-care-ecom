@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { Product } from "@/data/products";
+import { isOrderLocked, lockOrders } from "@/lib/orderLock";
 
 export interface CartItem {
   product: Product;
@@ -25,7 +26,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  // Repeat orders are always allowed: never lock products after ordering.
+  // One order per browser: once an order succeeds, every order button stays locked here.
+  const [locked, setLocked] = useState<boolean>(() => isOrderLocked());
   const [orderedProductIds, setOrderedProductIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -33,15 +35,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const markProductsAsOrdered = useCallback((productIds: string[]) => {
-    void productIds;
+    lockOrders();
+    setLocked(true);
+    setOrderedProductIds((prev) => Array.from(new Set([...prev, ...productIds])));
   }, []);
 
   const isOrdered = useCallback((productId: string) => {
     void productId;
-    return false;
-  }, []);
+    return locked;
+  }, [locked]);
 
   const addToCart = useCallback((product: Product) => {
+    if (isOrderLocked()) return;
     setItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {

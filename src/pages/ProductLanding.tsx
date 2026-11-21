@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { ORDER_LOCKED_MESSAGE } from "@/lib/orderLock";
 import {
   ShoppingCart, Star, Shield, Truck,
   Clock, Phone, MessageCircle, Users,
@@ -56,7 +57,7 @@ const ProductLanding = () => {
     : 0;
 
   const handleOrder = () => {
-    if (productOrdered) { toast.info("এই পণ্যটি ইতিমধ্যে অর্ডার করা হয়েছে।"); return; }
+    if (productOrdered) { toast.info(ORDER_LOCKED_MESSAGE); return; }
     addToCart(product);
     const eid = genEventId();
     trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category }, 1, eid);
@@ -197,8 +198,9 @@ const ProductLanding = () => {
             size="lg"
             className="mt-4 h-[52px] w-full gap-2 rounded-xl gradient-primary text-[15px] font-extrabold text-primary-foreground shadow-lg active:scale-[0.98]"
             onClick={handleOrder}
+            disabled={productOrdered}
           >
-            <ShoppingCart className="h-5 w-5" /> এখনই অর্ডার করুন
+            <ShoppingCart className="h-5 w-5" /> {productOrdered ? "ইতিমধ্যে অর্ডার করা হয়েছে" : "এখনই অর্ডার করুন"}
           </Button>
 
           <Button
@@ -296,8 +298,9 @@ const ProductLanding = () => {
             size="lg"
             className="h-[52px] w-full gap-2 rounded-xl gradient-primary text-[15px] font-extrabold text-primary-foreground shadow-lg active:scale-[0.98]"
             onClick={handleOrder}
+            disabled={productOrdered}
           >
-            <ShoppingCart className="h-5 w-5" /> এখনই অর্ডার করুন
+            <ShoppingCart className="h-5 w-5" /> {productOrdered ? "ইতিমধ্যে অর্ডার করা হয়েছে" : "এখনই অর্ডার করুন"}
           </Button>
         </div>
       </section>
@@ -492,8 +495,9 @@ const ProductLanding = () => {
               size="lg"
               className="mt-4 h-[52px] w-full gap-2 rounded-xl bg-card text-[15px] font-extrabold text-destructive shadow-lg hover:bg-card/90 active:scale-[0.98]"
               onClick={handleOrder}
+            disabled={productOrdered}
             >
-              <ShoppingCart className="h-5 w-5" /> এখনই অর্ডার করুন
+              <ShoppingCart className="h-5 w-5" /> {productOrdered ? "ইতিমধ্যে অর্ডার করা হয়েছে" : "এখনই অর্ডার করুন"}
             </Button>
           </div>
         </div>
@@ -581,8 +585,9 @@ const ProductLanding = () => {
           <Button
             className="h-11 flex-1 gap-1.5 rounded-lg gradient-primary text-sm font-extrabold text-primary-foreground"
             onClick={handleOrder}
+            disabled={productOrdered}
           >
-            <ShoppingCart className="h-4 w-4" /> অর্ডার করুন
+            <ShoppingCart className="h-4 w-4" /> {productOrdered ? "অর্ডার হয়েছে" : "অর্ডার করুন"}
           </Button>
         </div>
       </div>

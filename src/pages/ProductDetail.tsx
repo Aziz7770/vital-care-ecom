@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { ORDER_LOCKED_MESSAGE } from "@/lib/orderLock";
 import { LANDING_ONLY } from "@/config/siteMode";
 import { ShoppingCart, Star, ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const ProductDetail = ({ slugOverride }: { slugOverride?: string } = {}) => {
   }
 
   const handleAdd = () => {
-    if (productOrdered) { toast.info("এই পণ্যটি ইতিমধ্যে অর্ডার করা হয়েছে।"); return; }
+    if (productOrdered) { toast.info(ORDER_LOCKED_MESSAGE); return; }
     addToCart(product);
     const eid = genEventId();
     trackAddToCart({ id: product.id, name: product.name, price: product.price, category: product.category }, 1, eid);

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/context/CartContext";
+import { isOrderLocked, ORDER_LOCKED_MESSAGE } from "@/lib/orderLock";
 import { toast } from "sonner";
 import { CheckCircle } from "lucide-react";
 import SEO from "@/components/SEO";
@@ -59,6 +60,7 @@ const Checkout = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
+    if (isOrderLocked()) { toast.info(ORDER_LOCKED_MESSAGE); return; }
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
