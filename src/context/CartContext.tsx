@@ -22,7 +22,12 @@ interface CartContextType {
   isOrdered: (productId: string) => boolean;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// Keep one context object across hot reloads so the provider and hooks always match.
+const globalScope = globalThis as typeof globalThis & {
+  __cartContext?: React.Context<CartContextType | undefined>;
+};
+const CartContext =
+  globalScope.__cartContext ?? (globalScope.__cartContext = createContext<CartContextType | undefined>(undefined));
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
